@@ -11,7 +11,7 @@ import time
 '''Get contents of file path as string'''
 def read_file(path):
     with open(path) as f:
-        return f.read()
+        return f.read().strip()
 
 '''Write contents of file path with text'''
 def write_file(path, text):
