@@ -8,8 +8,7 @@ class GetSumID(unittest.TestCase):
 class GetChampID(unittest.TestCase):
     def test(self):
         self.assertEqual(stats.get_champ_id('aatrox'), '266')
-        self.assertEqual(stats.get_champ_id('zyra'), '143')
-
+        self.assertEqual(stats.get_champ_id('Zyra'), '143')
 
 if __name__ == '__main__':
     unittest.main(exit=False)
