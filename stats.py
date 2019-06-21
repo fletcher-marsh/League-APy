@@ -1,5 +1,6 @@
 import time
 import queries
+from pprint import pprint
 
 '''
 Get list of all matches on of a summoner on a specific champ. Wrapper around get_matches
@@ -104,9 +105,9 @@ def get_top_positions():
     }
     challengers = queries.get_challengers()
     for c in challengers:
-        sum_id = queries.get_sum_id(c['summonerName'])
+        acc_id = queries.get_acc_id(c['summonerName'])
         # Take last 20 matches
-        matches = queries.get_matches(sum_id, endIndex=20)
+        matches = queries.get_matches(acc_id, endIndex=20)
         roles = {
             'top': 0,
             'jg': 0,
@@ -134,8 +135,47 @@ def get_top_positions():
                 best_role = r
 
         all_roles[best_role] += 1
-        time.sleep(1.3)
+        time.sleep(2)
 
     return all_roles
 
-print(get_top_positions())
+
+def get_recent_wr(sum_id, acc_id):
+    last_20 = queries.get_matches(acc_id, endIndex=20)
+    if len(last_20) == 0:
+        return None
+    wins = 0
+    for m in last_20:
+        match = queries.get_match(m['gameId'])
+        for p in match['participantIdentities']:
+            if p['player']['summonerId'] == sum_id:
+                p_id = p['participantId']
+                break
+        for p in match['participants']:
+            if p['participantId'] == p_id:
+                if p['stats']['win']:
+                    wins += 1
+    return wins / len(last_20)
+    
+
+'''
+Get stats about all players in a given players game
+'''
+def get_current_game_stats(sum_id):
+    cur_game = queries.get_current_game(sum_id)
+    if 'participants' in cur_game.keys():
+        player_info = {}
+        for p in cur_game['participants']:
+            player_info[p['summonerName']] = {
+                'sum_id': p['summonerId'],
+                'team': p['teamId'],
+                'champ': queries.get_champ_name(p['championId']),
+                'winrate': get_recent_wr(p['summonerId'], queries.get_acc_id(p['summonerName']))
+            }
+            time.sleep(2)
+        pprint(player_info)
+    else:
+        print('No game found')
+        return None
+
+get_current_game_stats(queries.get_sum_id('Revenge'))

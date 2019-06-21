@@ -9,29 +9,13 @@ from pprint import pprint # Not used, but SUPER useful for readability of API re
 # -------------------------------------------------
 
 '''
-Wrapper function to keep track of requests. Current rate limits are:
-20 reqs per 1 second
-100 reqs per 2 minutes
-'''
-def request_wrapper(f):
-    def req_with_count(*args, **kwargs):
-        global REQUESTS
-        res = f(*args, **kwargs)
-        REQUESTS += 1
-        if REQUESTS % 10 == 0:
-            print(f'Requests made: {REQUESTS}')
-        return res
-    return req_with_count
-
-'''
 Give readable info on request failure
 '''
-def check_request(req):
+def check_response(req):
     if 'status' in req.keys():
         print('\033[1;31;31mREQUEST FAILED\033[0m')
         print(f'Code: {req["status"]["status_code"]}')
         print(f'Message: {req["status"]["message"]}')
-        exit(1)
     
 '''Get contents of file path as string'''
 def read_file(path):
@@ -48,9 +32,24 @@ def to_date(time_in_ms):
     datetime.utcfromtimestamp(tiem_in_ms).strftime('%Y-%m-%d %H:%M:%S')
 
 API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
-API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of
+API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
 CHAMPS = json.loads(read_file('champions.json')) # Gotten from https://github.com/ngryman/lol-champions/blob/master/champions.json
 REQUESTS = 0 # To keep track of request counts (rate limiting)
+
+'''
+Wrapper function to keep track of requests. Current rate limits are:
+20 reqs per 1 second
+100 reqs per 2 minutes
+'''
+def request_wrapper(f):
+    def req_with_count(*args, **kwargs):
+        global REQUESTS
+        res = f(*args, **kwargs)
+        REQUESTS += 1
+        if REQUESTS % 10 == 0:
+            print(f'Requests made: {REQUESTS}')
+        return res
+    return req_with_count
 
 # -------------------------------------------------
 # Queries
@@ -65,8 +64,9 @@ def get_match(match_id):
         'api_key': API_KEY,
         'matchId': match_id
     }).json()
-    check_request(response)
+    check_response(response)
     return response
+
 
 '''
 Get a list of up to 100 matches according to parameters:
@@ -115,22 +115,34 @@ def get_matches(sum_id, champion=None, queue=None, season=None, beginTime=None, 
         'beginIndex': beginIndex,
         'endIndex': endIndex
     }).json()
-    check_request(response)
+    check_response(response)
     return response['matches']
-
+    
 '''
-Get unique Summoner ID attached to your account, used for most other endpoints
+Get unique Account ID attached to your account, used for other endpoints
 If you want to make lot's of queries, I recommend caching your id's so as to 
 reduce your footprint.
 '''
 @request_wrapper
+def get_acc_id(sum_name):
+    route = "summoner/v4/summoners/by-name/%s" % sum_name
+    response = requests.get(API_URL + route, params={
+        'api_key': API_KEY
+    }).json()
+    check_response(response)
+    return response['accountId']
+
+'''
+Similarly, get Summoner ID
+'''
 def get_sum_id(sum_name):
     route = "summoner/v4/summoners/by-name/%s" % sum_name
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_request(response)
-    return response['accountId']
+    check_response(response)
+    return response['id']
+
 
 '''
 Get unique Champion ID attached to a champion. Included in this project is a json
@@ -146,6 +158,8 @@ def get_champ_id(champ_name):
 Inversely, get champ name from ID
 '''
 def get_champ_name(champ_id):
+    if isinstance(champ_id, int):
+        champ_id = str(champ_id)
     for champ in CHAMPS:
         if champ['key'] == champ_id:
             return champ['id']
@@ -158,5 +172,17 @@ def get_challengers():
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_request(response)
+    check_response(response)
     return response['entries']
+    
+'''
+Get current game data for a specific integer Summoner ID
+'''
+def get_current_game(sum_id):
+    route = f'spectator/v4/active-games/by-summoner/{sum_id}'
+    response = requests.get(API_URL + route, params={
+        'api_key': API_KEY
+    }).json()
+    # No check here due to casing on whether there is a match or not
+    return response
+
