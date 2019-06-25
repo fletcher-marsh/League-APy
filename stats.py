@@ -155,6 +155,7 @@ def get_recent_wr(sum_id, acc_id):
             if p['participantId'] == p_id:
                 if p['stats']['win']:
                     wins += 1
+        time.sleep(1)
     return wins / len(last_20)
     
 
@@ -173,9 +174,7 @@ def get_current_game_stats(sum_id):
                 'winrate': get_recent_wr(p['summonerId'], queries.get_acc_id(p['summonerName']))
             }
             time.sleep(2)
-        pprint(player_info)
+        return player_info
     else:
-        print('No game found')
         return None
 
-get_current_game_stats(queries.get_sum_id('Revenge'))

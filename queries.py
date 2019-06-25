@@ -24,7 +24,7 @@ def read_file(path):
 
 '''Write contents of file path with text'''
 def write_file(path, text):
-    with open(path, "wt") as f:
+    with open(path, "a") as f:
         f.write(text)
 
 '''Convert time in ms (Unix epoch) to readable format (UTC Y-m-d H:M:S)'''
@@ -135,6 +135,7 @@ def get_acc_id(sum_name):
 '''
 Similarly, get Summoner ID
 '''
+@request_wrapper
 def get_sum_id(sum_name):
     route = "summoner/v4/summoners/by-name/%s" % sum_name
     response = requests.get(API_URL + route, params={
@@ -167,6 +168,7 @@ def get_champ_name(champ_id):
 '''
 Get summoner data for current challenger players
 '''
+@request_wrapper
 def get_challengers():
     route = 'league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5'
     response = requests.get(API_URL + route, params={
@@ -178,11 +180,12 @@ def get_challengers():
 '''
 Get current game data for a specific integer Summoner ID
 '''
+@request_wrapper
 def get_current_game(sum_id):
     route = f'spectator/v4/active-games/by-summoner/{sum_id}'
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    # No check here due to casing on whether there is a match or not
+    check_response(response)
     return response
 
