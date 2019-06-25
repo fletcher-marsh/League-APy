@@ -99,10 +99,12 @@ async def on_message(message):
 @CLIENT.event
 async def on_ready():
     global USERS
+    saved_users = []
     if os.path.exists("./users.txt"):
         saved_users = queries.read_file('users.txt').split('\n')
     else:
         queries.write_file('users.txt', '')
+        
     for u in saved_users:
         USERS.append(u)
     
