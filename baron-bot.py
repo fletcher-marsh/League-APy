@@ -1,16 +1,20 @@
 
 import discord
+from discord.ext import commands
 import queries
 import stats
 import os
-
+import time
+import asyncio
 
 TOKEN = queries.read_file('disc_token.txt')
-CLIENT = discord.Client()
-USERS = []
+CLIENT = commands.Bot(command_prefix="/")
+USERS = {}
+
 # -------------------------------------------------
 # Helpers
 # -------------------------------------------------
+
 '''
 Send a message with formatting to the given channel
 '''
@@ -21,27 +25,27 @@ async def send_message(channel, msg):
 # -------------------------------------------------
 # Handlers - actual functionality of the bot
 # -------------------------------------------------
+
 '''
 Command:
-/add [summoner_1] [summoner_2] ... [summoner_n]
+/add disc_name sum_name
 
 Functionality:
-Add summoner(s) to be tracked by Baron Bot
+Add summoner associated with a discord account to be tracked by Baron Bot
 '''
-async def handle_add(message):
+@CLIENT.command(pass_context=True)
+async def add(ctx, disc_name, sum_name):
     global USERS
-    new_users = message.content.split(" ")[1:] # skip invocation
-    if len(new_users) != 0:
-        new = []
-        for u in new_users:
-            if u not in USERS:
-                new.append(u)
-                USERS.append(u)
-                queries.write_file('users.txt', u + '\n')
-        if new:
-            await send_message(message.channel, "Added: "+", ".join(new))
-        else:
-            await send_message(message.channel, "Already added all names")
+    if disc_name not in USERS:
+        USERS[disc_name] = [sum_name]
+        queries.write_file('users.txt', disc_name + " " + sum_name + '\n')
+        await send_message(ctx.message.channel, f"Added {sum_name}")
+    elif sum_name in USERS.values():
+        await send_message(ctx, f"Already added {sum_name}")
+    else:
+        USERS[disc_name].append(sum_name)
+        queries.write_file('users.txt', disc_name + " " + sum_name + '\n')
+        await send_message(ctx.message.channel, f"Added {sum_name}")
  
 '''
 Command:
@@ -50,64 +54,79 @@ Command:
 Functionality:
 Checks whether summoner(s) are being tracked
 '''
-async def handle_check(message):
+@CLIENT.command(pass_context=True)
+async def check(ctx, *args):
     global USERS
-    check_users = message.content.split(" ")[1:]
-    if len(check_users) != 0:
+    if len(args) != 0:
         added = []
         not_added = []
-        for u in check_users:
-            if u in USERS:
+        for u in args:
+            if u in USERS.values():
                 added.append(u)
             else:
                 not_added.append(u)
         msg = f'Added: {", ".join(added)}\nNot Added: {", ".join(not_added)}'
-        await send_message(message.channel, msg)
+        await send_message(ctx, msg)
 
-async def handle_remove(message):
+'''
+Command:
+/remove [summoner_1] [summoner_2] ... [summoner_n]
+
+Functionality:
+Removes users from the system
+'''
+@CLIENT.command(pass_context=True)
+async def remove(ctx, *args):
     global USERS
-    remove_users = message.content.split(" ")[1:]
-    if len(remove_users) != 0:
-        to_keep = []
+    new_users = {}
+    if len(args) != 0:
+        discs_to_keep = []
+        for disc_name in USERS.keys():
+            sums_to_keep = []
+            for sum_name in USERS[disc_name]:
+                if sum_name not in args:
+                    new_users[disc_name] = new_users.get(disc_name, []) + [sum_name]
+        print(new_users)
+        USERS = new_users
+        if os.path.exists("./users.txt"):
+            os.remove('users.txt')
+        if len(USERS) == 0:
+            queries.write_file('users.txt', '')
         for u in USERS:
-            if u not in remove_users:
-                to_keep.append(u)
-        USERS = to_keep
-        os.remove('users.txt')
-        queries.write_file('users.txt', '\n'.join(USERS))
-        await send_message(message.channel, f'Successfully removed: {", ".join(remove_users)}')
+            for s in USERS[u]:
+                queries.write_file('users.txt', u + ' ' + s + '\n')
+        await send_message(ctx.message.channel, f'Successfully removed: {", ".join(args)}')
+
+'''
+Handle timed checks on live games for registered summoners
+'''
+async def check_live_game():
+    await CLIENT.wait_until_ready()
+    while not CLIENT.is_closed:
+        # channel = discord.utils.find(lambda c: c.name == 'general', CLIENT.get_all_channels())
+        channel = CLIENT.get_channel('583756138282090502')
+        # for member in channel.voice_members:
+        #     print(dir(member))
+        await asyncio.sleep(90)
+        
+        
+
 # -------------------------------------------------
 # Bot plumbing
 # -------------------------------------------------
-
-@CLIENT.event
-async def on_message(message):
-    global USERS
-    # we do not want the bot to reply to itself
-    if message.author == CLIENT.user:
-        return
-
-    if message.content.startswith('/add'):
-        await handle_add(message)
-    elif message.content.startswith('/check'):
-        await handle_check(message)
-    elif message.content.startswith('/remove'):
-        await handle_remove(message)
-    else:
-        await send_message(message.channel, "Unrecognized command")
 
 @CLIENT.event
 async def on_ready():
     global USERS
     saved_users = []
     if os.path.exists("./users.txt"):
-        saved_users = queries.read_file('users.txt').split('\n')
-    else:
-        queries.write_file('users.txt', '')
-        
-    for u in saved_users:
-        USERS.append(u)
-    
+        lines = queries.read_file('users.txt').split('\n')
+        for line in lines:
+            print(line)
+            if line != '' and (not line.isspace()):
+                names = line.split(' ')
+                USERS[names[0]] = USERS.get(names[0], []) + [names[1]]
+    print(USERS)
 
-
+CLIENT.loop.create_task(check_live_game())
 CLIENT.run(TOKEN)
