@@ -122,7 +122,6 @@ async def on_ready():
     if os.path.exists("./users.txt"):
         lines = queries.read_file('users.txt').split('\n')
         for line in lines:
-            print(line)
             if line != '' and (not line.isspace()):
                 names = line.split(' ')
                 USERS[names[0]] = USERS.get(names[0], []) + [names[1]]
