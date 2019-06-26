@@ -66,7 +66,7 @@ async def check(ctx, *args):
             else:
                 not_added.append(u)
         msg = f'Added: {", ".join(added)}\nNot Added: {", ".join(not_added)}'
-        await send_message(ctx, msg)
+        await send_message(ctx.message.channel, msg)
 
 '''
 Command:
@@ -86,7 +86,7 @@ async def remove(ctx, *args):
             for sum_name in USERS[disc_name]:
                 if sum_name not in args:
                     new_users[disc_name] = new_users.get(disc_name, []) + [sum_name]
-        print(new_users)
+
         USERS = new_users
         if os.path.exists("./users.txt"):
             os.remove('users.txt')
@@ -126,7 +126,6 @@ async def on_ready():
             if line != '' and (not line.isspace()):
                 names = line.split(' ')
                 USERS[names[0]] = USERS.get(names[0], []) + [names[1]]
-    print(USERS)
 
 CLIENT.loop.create_task(check_live_game())
 CLIENT.run(TOKEN)
