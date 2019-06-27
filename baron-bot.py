@@ -6,6 +6,7 @@ import stats
 import os
 import time
 import asyncio
+from functools import reduce
 
 TOKEN = queries.read_file('disc_token.txt')
 CLIENT = commands.Bot(command_prefix="/")
@@ -21,6 +22,38 @@ Send a message with formatting to the given channel
 async def send_message(channel, msg):
     add_ticks = "```" + msg + "```"
     await CLIENT.send_message(channel, add_ticks)
+
+
+'''
+Print current game data into a nice, readable format
+'''
+def format_current_game(game):
+    blue_sums = list(filter(lambda s: game[s]['team'] == 100, game.keys()))
+    red_sums = list(filter(lambda s: game[s]['team'] == 200, game.keys()))
+    long_sum = reduce(lambda x, y: max(x, len(y)), blue_sums + red_sums, 0)
+    long_wr = reduce(lambda x, y: max(x, len(str(y['winrate']))), game.values(), 0)
+    long_champ = reduce(lambda x, y: max(x, len(str(y['champ']))), game.values(), 0)
+    formatted = "BLUE" + " " * ((long_sum - 4) + long_wr + long_champ)
+    formatted = formatted + "RED" + " " * ((long_sum - 3) + long_wr + long_champ)
+    print('blue:',blue_sums)
+    print('red:',red_sums)
+    print(long_sum, long_champ,long_wr)
+    for i in range(5):
+        s = blue_sums[i]
+        c = game[blue_sums[i]]['champ']
+        wr = str(game[blue_sums[i]]['winrate'])
+        formatted += s + ' ' * (long_sum - len(s))
+        formatted += c + ' ' * (long_champ - len(c))
+        formatted += wr + ' ' * (long_wr - len(wr))
+
+        s = red_sums[i]
+        c = game[red_sums[i]]['champ']
+        wr = str(game[red_sums[i]]['winrate'])
+        formatted += s + ' ' * (long_sum - len(s))
+        formatted += c + ' ' * (long_champ - len(c))
+        formatted += wr + ' ' * (long_wr - len(wr)) + "\n"
+    return '```' + formatted + '```'    
+
 
 # -------------------------------------------------
 # Handlers - actual functionality of the bot
@@ -103,11 +136,22 @@ Handle timed checks on live games for registered summoners
 async def check_live_game():
     await CLIENT.wait_until_ready()
     while not CLIENT.is_closed:
-        # channel = discord.utils.find(lambda c: c.name == 'general', CLIENT.get_all_channels())
         channel = CLIENT.get_channel('583756138282090502')
-        # for member in channel.voice_members:
-        #     print(dir(member))
-        await asyncio.sleep(90)
+        for member in channel.voice_members:
+            if member.name in USERS.keys():
+                for s in USERS[member.name]:
+                    print(s)
+                    sum_id = queries.get_sum_id(s)
+                    print(sum_id)
+                    cur_game = stats.get_current_game_stats(sum_id)
+                    print(cur_game)
+                    if cur_game:
+                        data = format_current_game(cur_game)
+                        print(data)
+                        await CLIENT.send_message(channel, data)
+
+        
+        await asyncio.sleep(10)
         
         
 

@@ -33,7 +33,7 @@ def to_date(time_in_ms):
 
 API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
-CHAMPS = json.loads(read_file('champions.json')) # Gotten from https://github.com/ngryman/lol-champions/blob/master/champions.json
+CHAMPS = json.loads(read_file('champions.json'))['data'] # Locally stored champs
 REQUESTS = 0 # To keep track of request counts (rate limiting)
 
 '''
@@ -58,6 +58,7 @@ def request_wrapper(f):
 '''
 From an Integer match ID, get specific details of match
 '''
+@request_wrapper
 def get_match(match_id):
     route = 'match/v4/matches/%d' % match_id
     response = requests.get(API_URL + route, params={
@@ -151,8 +152,8 @@ file containing all of the meta data for champions, so this does a linear search
 through that for the champion (could be improved with binary search, I guess...)
 '''
 def get_champ_id(champ_name):
-    for champ in CHAMPS:
-        if champ['id'] == champ_name.lower():
+    for champ in CHAMPS.keys():
+        if CHAMPS[champ]['id'].lower() == champ_name.lower():
             return champ['key']
 
 '''
@@ -161,9 +162,9 @@ Inversely, get champ name from ID
 def get_champ_name(champ_id):
     if isinstance(champ_id, int):
         champ_id = str(champ_id)
-    for champ in CHAMPS:
-        if champ['key'] == champ_id:
-            return champ['id']
+    for champ in CHAMPS.keys():
+        if CHAMPS[champ]['key'] == champ_id:
+            return CHAMPS[champ]['id']
 
 '''
 Get summoner data for current challenger players
