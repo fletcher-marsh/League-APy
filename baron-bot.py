@@ -34,7 +34,7 @@ def format_current_game(game):
     long_wr = reduce(lambda x, y: max(x, len(str(y['winrate']))), game.values(), 0)
     long_champ = reduce(lambda x, y: max(x, len(str(y['champ']))), game.values(), 0)
     formatted = "BLUE" + " " * ((long_sum - 4) + long_wr + long_champ)
-    formatted = formatted + "RED" + " " * ((long_sum - 3) + long_wr + long_champ)
+    formatted = formatted + "RED" + " " * ((long_sum - 3) + long_wr + long_champ) + "\n"
     print('blue:',blue_sums)
     print('red:',red_sums)
     print(long_sum, long_champ,long_wr)
@@ -42,16 +42,16 @@ def format_current_game(game):
         s = blue_sums[i]
         c = game[blue_sums[i]]['champ']
         wr = str(game[blue_sums[i]]['winrate'])
-        formatted += s + ' ' * (long_sum - len(s))
-        formatted += c + ' ' * (long_champ - len(c))
-        formatted += wr + ' ' * (long_wr - len(wr))
+        formatted += s + ' ' * (long_sum - len(s) + 1)
+        formatted += c + ' ' * (long_champ - len(c) + 1)
+        formatted += wr + ' ' * (long_wr - len(wr) + 1)
 
         s = red_sums[i]
         c = game[red_sums[i]]['champ']
         wr = str(game[red_sums[i]]['winrate'])
-        formatted += s + ' ' * (long_sum - len(s))
-        formatted += c + ' ' * (long_champ - len(c))
-        formatted += wr + ' ' * (long_wr - len(wr)) + "\n"
+        formatted += s + ' ' * (long_sum - len(s) + 1)
+        formatted += c + ' ' * (long_champ - len(c) + 1)
+        formatted += wr + ' ' * (long_wr - len(wr) + 1) + "\n"
     return '```' + formatted + '```'    
 
 

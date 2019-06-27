@@ -7,6 +7,30 @@
             "id": "Yuumi",
             "key": "350"
         },
+        "Rakan": {
+            "id": "Rakan",
+            "key": "497"
+        },
+        "Xayah": {
+            "id": "Xayah",
+            "key": "498"
+        },
+        "Kayn": {
+            "id": "Kayn",
+            "key": "141"
+        },
+        "Ornn": {
+            "id": "Ornn",
+            "key": "516"
+        },
+        "Sylas": {
+            "id": "Sylas",
+            "key": "517"
+        },
+        "Pyke": {
+            "id": "Pyke",
+            "key": "555"
+        },
         "Aatrox": {
             "version": "6.24.1",
             "id": "Aatrox",
