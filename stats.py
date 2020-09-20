@@ -178,3 +178,14 @@ def get_current_game_stats(sum_id):
     else:
         return None
 
+
+'''
+Check up on those pesky bot lanes
+'''
+def get_botlane_stats(sum_id):
+    # out of the last 20 games, show how many bots won/lost
+    l20 = queries.get_matches(sum_id, endIndex=20)
+    print(l20)
+    # winning criteria: better kda than opposing bot
+    
+    

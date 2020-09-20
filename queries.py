@@ -124,27 +124,43 @@ Get unique Account ID attached to your account, used for other endpoints
 If you want to make lot's of queries, I recommend caching your id's so as to 
 reduce your footprint.
 '''
-@request_wrapper
-def get_acc_id(sum_name):
-    route = "summoner/v4/summoners/by-name/%s" % sum_name
-    response = requests.get(API_URL + route, params={
-        'api_key': API_KEY
-    }).json()
-    check_response(response)
-    return response['accountId']
+def get_acc_id(name):
+    summ = get_summoner_by_name(name)
+    return summ['accountId']
 
 '''
 Similarly, get Summoner ID
 '''
-@request_wrapper
 def get_sum_id(sum_name):
-    route = "summoner/v4/summoners/by-name/%s" % sum_name
+    summ = get_summoner_by_name(name)
+    return summ['id']
+
+@request_wrapper
+def get_summoner_by_acc_id(acc_id):
+    route = "summoner/v4/summoners/by-account/%s" % acc_id
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
     check_response(response)
-    return response['id']
+    return response
 
+@request_wrapper
+def get_summoner_by_sum(sum_id):
+    route = "summoner/v4/summoners/%s" % sum_id
+    response = requests.get(API_URL + route, params={
+        'api_key': API_KEY
+    }).json()
+    check_response(response)
+    return response
+
+@request_wrapper
+def get_summoner_by_name(name):
+    route = "summoner/v4/summoners/by-name/%s" % name
+    response = requests.get(API_URL + route, params={
+        'api_key': API_KEY
+    }).json()
+    check_response(response)
+    return response
 
 '''
 Get unique Champion ID attached to a champion. Included in this project is a json
