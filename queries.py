@@ -19,7 +19,7 @@ def check_response(req):
     
 '''Get contents of file path as string'''
 def read_file(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return f.read().strip()
 
 '''Write contents of file path with text'''
@@ -33,7 +33,7 @@ def to_date(time_in_ms):
 
 API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
-CHAMPS = json.loads(read_file('champions.json'))['data'] # Locally stored champs
+CHAMPS = json.loads(read_file('champions.json')) # Locally stored champs
 REQUESTS = 0 # To keep track of request counts (rate limiting)
 
 '''
@@ -103,11 +103,12 @@ Get a list of up to 100 matches according to parameters:
                 NOTE: endIndex must be after beginIndex
 '''
 @request_wrapper
-def get_matches(sum_id, champion=None, queue=None, season=None, beginTime=None, endTime=None, beginIndex=0, endIndex=100):
-    route = 'match/v4/matchlists/by-account/%s' % sum_id
+def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None, endTime=None, beginIndex=0, endIndex=100):
+    print(summoner)
+    route = 'match/v4/matchlists/by-account/%s' % summoner.acc_id
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY,
-        'encryptedAccountId': sum_id,
+        'encryptedAccountId': summoner.acc_id,
         'champion': champion,
         'queue': queue,
         'season': season,
@@ -198,8 +199,8 @@ def get_challengers():
 Get current game data for a specific integer Summoner ID
 '''
 @request_wrapper
-def get_current_game(sum_id):
-    route = f'spectator/v4/active-games/by-summoner/{sum_id}'
+def get_current_game(summoner):
+    route = f'spectator/v4/active-games/by-summoner/{summoner.sum_id}'
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
