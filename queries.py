@@ -36,8 +36,10 @@ API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off
 CHAMPS = json.loads(read_file('champions.json')) # Locally stored champs
 REQUESTS = 0 # To keep track of request counts (rate limiting)
 REQUEST_START = None
-REQUEST_MIN_LIMIT = 90
-REQUEST_SEC_LIMIT = 18
+REQUEST_PER_TWO_MIN_LIMIT = 100
+TWO_MIN = 120
+REQUEST_PER_SEC_LIMIT = 20
+ONE_SEC = 1
 
 '''
 Wrapper function to keep track of requests. Current rate limits are:
@@ -51,12 +53,14 @@ def request_wrapper(f):
             REQUEST_START = time.time()
         else:
             now = time.time()
-            if REQUESTS != 0 and REQUESTS % REQUEST_MIN_LIMIT == 0 and (REQUEST_START - now <= 60):
-                time.sleep(60.5)
-                REQUEST_START = now
-            elif REQUESTS != 0 and REQUESTS % REQUEST_SEC_LIMIT == 0 and (REQUEST_START - now <= 1):
-                time.sleep(1)
-                REQUEST_START = now
+            since = now - REQUEST_START
+            if REQUESTS != 0 and REQUESTS % REQUEST_PER_TWO_MIN_LIMIT == 0 and (since <= TWO_MIN):
+                to_sleep = TWO_MIN - since + 1
+                print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
+                time.sleep(to_sleep) # maybe two_min - since?
+                REQUEST_START = time.time()
+            elif REQUESTS != 0 and REQUESTS % REQUEST_PER_SEC_LIMIT == 0 and (since <= ONE_SEC):
+                time.sleep(ONE_SEC)
         res = f(*args, **kwargs)
         REQUESTS += 1
         if REQUESTS % 10 == 0:
