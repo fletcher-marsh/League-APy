@@ -10,7 +10,7 @@ class Summoner():
             summoner = queries.get_summoner_by_sum_id(sum_id)
         else:
             raise Exception("No information provided to create Summoner")
-        
+
         self.name = summoner["name"]
         self.acc_id = summoner["accountId"]
         self.sum_id = summoner["id"]

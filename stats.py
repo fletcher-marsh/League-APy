@@ -123,8 +123,11 @@ def get_top_positions():
     }
     challengers = queries.get_challengers()
     for c in challengers:
-        # Take last 20 matches
-        summoner = Summoner(name=c['summonerName'])
+        # Take last 20 matches, skipping over naming issues
+        try:
+            summoner = Summoner(name=c['summonerName'])
+        except:
+            continue
         matches = queries.get_matches(summoner, endIndex=20)
         roles = {
             'top': 0,
@@ -153,7 +156,7 @@ def get_top_positions():
                 best_role = r
 
         all_roles[best_role] += 1
-        time.sleep(2)
+        # time.sleep(2)
 
     return all_roles
 
@@ -245,4 +248,4 @@ def get_botlane_stats(summoner):
         print(blue_kda, red_kda)
         exit(1)
 
-get_botlane_stats(Summoner(name="CertifiedNanners"))
+# get_botlane_stats(Summoner(name="CertifiedNanners"))

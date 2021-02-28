@@ -35,6 +35,9 @@ API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
 CHAMPS = json.loads(read_file('champions.json')) # Locally stored champs
 REQUESTS = 0 # To keep track of request counts (rate limiting)
+REQUEST_START = None
+REQUEST_MIN_LIMIT = 90
+REQUEST_SEC_LIMIT = 18
 
 '''
 Wrapper function to keep track of requests. Current rate limits are:
@@ -43,7 +46,17 @@ Wrapper function to keep track of requests. Current rate limits are:
 '''
 def request_wrapper(f):
     def req_with_count(*args, **kwargs):
-        global REQUESTS
+        global REQUESTS, REQUEST_START
+        if REQUEST_START is None:
+            REQUEST_START = time.time()
+        else:
+            now = time.time()
+            if REQUESTS != 0 and REQUESTS % REQUEST_MIN_LIMIT == 0 and (REQUEST_START - now <= 60):
+                time.sleep(60.5)
+                REQUEST_START = now
+            elif REQUESTS != 0 and REQUESTS % REQUEST_SEC_LIMIT == 0 and (REQUEST_START - now <= 1):
+                time.sleep(1)
+                REQUEST_START = now
         res = f(*args, **kwargs)
         REQUESTS += 1
         if REQUESTS % 10 == 0:
@@ -104,7 +117,6 @@ Get a list of up to 100 matches according to parameters:
 '''
 @request_wrapper
 def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None, endTime=None, beginIndex=0, endIndex=100):
-    print(summoner)
     route = 'match/v4/matchlists/by-account/%s' % summoner.acc_id
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY,
