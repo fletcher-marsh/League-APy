@@ -1,9 +1,11 @@
 import champion_groups
 import queries
 import time
+import util
 
-from summoner import Summoner
+# from summoner import Summoner
 from pprint import pprint
+
 
 '''
 Get list of all matches on of a summoner on a specific champ. Wrapper around get_matches
@@ -21,41 +23,6 @@ def get_matches_by_champ(sum_id, champ_id):
             start += 100
             end += 100
 
-'''
-Get participant ID for summoner in a match
-'''
-def get_participant_id_for_summoner_in_match(summoner, match):
-    participants = match['participantIdentities']
-    for p in participants:
-        if p['player']['accountId'] == summoner.sum_id:
-            return p['participantId']
-    return None
-
-'''
-Get participant by ID
-'''
-def get_participant_by_id(p_id, match):
-    participants = match['participantIdentities']
-    for p in participants:
-        if p['participantId'] == p_id:
-            return p
-    return None
-
-'''
-Get single game data (Kills, Deaths, Assists) for summoner
-'''
-def get_match_stats_for_sum(summoner, match):
-    p_id = get_participant_id_for_summoner_in_match(summoner, match)
-
-    result = {}
-    players = match['participants']
-    for p in players:
-        if p['participantId'] == p_id:
-            stats = p['stats']
-            result['kills'] = stats['kills']
-            result['deaths'] = stats['deaths']
-            result['assists'] = stats['assists']
-    return result
 
 '''
 Print out aggregate stats for summoner on a particular champion
@@ -79,6 +46,7 @@ def get_champ_stats(sum_id, champ_name):
     print('Assists: %d' % total_assists) 
     print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
     print()
+
 
 '''
 Print out aggregate stats for summoner on every champion
@@ -105,7 +73,6 @@ def get_all_champs_stats(sum_id):
         print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
         print()
         time.sleep(3)
-
 
 
 '''
@@ -200,15 +167,6 @@ def get_current_game_stats(summoner):
         return None
 
 
-def get_combined_kda(player_participants, match):
-    kills, deaths, assists = 0, 0, 0
-    for player, participant in player_participants:
-        stats = get_match_stats_for_sum(Summoner(sum_id=participant['summonerId']), match)
-        kills += stats['kills']
-        deaths += stats['deaths']
-        assists += stats['assists']
-    return (kills + assists) / deaths
-
 '''
 Check up on those pesky bot lanes.
 
@@ -221,31 +179,39 @@ def get_botlane_stats(summoner):
     # out of the last 20 games, show how many bots won/lost
     last_20_matches = queries.get_matches(summoner, endIndex=20)
 
+    summoners_bot_won = 0
+    summoners_bot_lost = 0
+
     # winning criteria: better kda than opposing bot
     for m in last_20_matches:
         match = queries.get_match(m['gameId'])
+        summoner_is_blue_side = False
         blue_bot = []
         red_bot = []
         for player in match["participants"]:
             champ = queries.get_champ_name(player['championId'])
-            if champ in champion_groups.BOT or champ in champion_groups.SUPPORT:
-                if player['teamId'] == 100:
-                    blue_bot.append((player, get_participant_by_id(player['participantId'], match)))
-                else:
-                    red_bot.append((player, get_participant_by_id(player['participantId'], match)))
-        print(len(red_bot), len(blue_bot))
-        exit(1)
-        if len(blue_bot) == len(red_bot) == 2:
-            blue_kda = get_combined_kda(blue_bot)
-            red_kda = get_combined_kda(red_bot)
-        else:
-            print("Invalid bot lane encountered:")
-            pprint(red_bot)
-            print("=================================")
-            pprint(blue_bot)
-            continue
-        
-        print(blue_kda, red_kda)
-        exit(1)
+            participant = util.participant_by_id(player['participantId'], match)
+            if participant['player']['summonerId'] == summoner.sum_id:
+                summoner_is_blue_side = util.is_blue_side(player)
 
-# get_botlane_stats(Summoner(name="CertifiedNanners"))
+            if util.is_bot(player):
+                if util.is_blue_side(player):
+                    blue_bot.append((player, participant))
+                else:
+                    red_bot.append((player, participant))
+
+        if len(blue_bot) == len(red_bot) == 2:
+            blue_kda = util.combined_kda(blue_bot, match)
+            red_kda = util.combined_kda(red_bot, match)
+            if blue_kda > red_kda:
+                if summoner_is_blue_side:
+                    summoners_bot_won += 1
+                else:
+                    summoners_bot_lost += 1
+            else:
+                if summoner_is_blue_side:
+                    summoners_bot_lost += 1
+                else:
+                    summoners_bot_won += 1
+        
+    return (summoners_bot_won, summoners_bot_lost)
