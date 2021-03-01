@@ -1,5 +1,6 @@
 key.txt
 disc_token.txt
 users.txt
+*.pyc
 
 __pycache__/
