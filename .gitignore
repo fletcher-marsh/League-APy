@@ -1,3 +1,5 @@
 key.txt
 disc_token.txt
 users.txt
+
+__pycache__/
