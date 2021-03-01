@@ -19,7 +19,7 @@ def check_response(req):
     
 '''Get contents of file path as string'''
 def read_file(path):
-    with open(path) as f:
+    with open(path, encoding="utf-8") as f:
         return f.read().strip()
 
 '''Write contents of file path with text'''
@@ -33,8 +33,10 @@ def to_date(time_in_ms):
 
 API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
-CHAMPS = json.loads(read_file('champions.json'))['data'] # Locally stored champs
-REQUESTS = 0 # To keep track of request counts (rate limiting)
+CHAMPS = json.loads(read_file('champions.json')) # Locally stored champs
+# Keep track of request counts (rate limiting)
+REQUESTS = 0
+REQUEST_START = None 
 
 '''
 Wrapper function to keep track of requests. Current rate limits are:
@@ -42,14 +44,30 @@ Wrapper function to keep track of requests. Current rate limits are:
 100 reqs per 2 minutes
 '''
 def request_wrapper(f):
-    def req_with_count(*args, **kwargs):
-        global REQUESTS
+    REQUEST_PER_TWO_MIN_LIMIT = 100
+    TWO_MIN = 120
+    REQUEST_PER_SEC_LIMIT = 20
+    ONE_SEC = 1
+    def req_with_limit(*args, **kwargs):
+        global REQUESTS, REQUEST_START
+        if REQUEST_START is None:
+            REQUEST_START = time.time()
+        else:
+            now = time.time()
+            since = now - REQUEST_START
+            if REQUESTS != 0 and REQUESTS % REQUEST_PER_TWO_MIN_LIMIT == 0 and (since <= TWO_MIN):
+                to_sleep = (TWO_MIN - since) + 1
+                print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
+                time.sleep(to_sleep)
+                REQUEST_START = time.time()
+            elif REQUESTS != 0 and REQUESTS % REQUEST_PER_SEC_LIMIT == 0 and (since <= ONE_SEC):
+                time.sleep(ONE_SEC)
         res = f(*args, **kwargs)
         REQUESTS += 1
         if REQUESTS % 10 == 0:
             print(f'Requests made: {REQUESTS}')
         return res
-    return req_with_count
+    return req_with_limit
 
 # -------------------------------------------------
 # Queries
@@ -103,11 +121,11 @@ Get a list of up to 100 matches according to parameters:
                 NOTE: endIndex must be after beginIndex
 '''
 @request_wrapper
-def get_matches(sum_id, champion=None, queue=None, season=None, beginTime=None, endTime=None, beginIndex=0, endIndex=100):
-    route = 'match/v4/matchlists/by-account/%s' % sum_id
+def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None, endTime=None, beginIndex=0, endIndex=100):
+    route = 'match/v4/matchlists/by-account/%s' % summoner.acc_id
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY,
-        'encryptedAccountId': sum_id,
+        'encryptedAccountId': summoner.acc_id,
         'champion': champion,
         'queue': queue,
         'season': season,
@@ -131,7 +149,7 @@ def get_acc_id(name):
 '''
 Similarly, get Summoner ID
 '''
-def get_sum_id(sum_name):
+def get_sum_id(name):
     summ = get_summoner_by_name(name)
     return summ['id']
 
@@ -145,7 +163,7 @@ def get_summoner_by_acc_id(acc_id):
     return response
 
 @request_wrapper
-def get_summoner_by_sum(sum_id):
+def get_summoner_by_sum_id(sum_id):
     route = "summoner/v4/summoners/%s" % sum_id
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
@@ -198,8 +216,8 @@ def get_challengers():
 Get current game data for a specific integer Summoner ID
 '''
 @request_wrapper
-def get_current_game(sum_id):
-    route = f'spectator/v4/active-games/by-summoner/{sum_id}'
+def get_current_game(summoner):
+    route = f'spectator/v4/active-games/by-summoner/{summoner.sum_id}'
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
