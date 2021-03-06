@@ -1,5 +1,6 @@
 import requests
 import time
+import util
 from pprint import pprint # Not used, but SUPER useful for readability of API results
 
 
@@ -20,7 +21,7 @@ def check_response(req):
 def to_date(time_in_ms):
     datetime.utcfromtimestamp(tiem_in_ms).strftime('%Y-%m-%d %H:%M:%S')
 
-API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
+API_KEY = util.read_file("key.txt") # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
 # Keep track of request counts (rate limiting)
 REQUESTS = 0
@@ -37,6 +38,8 @@ def request_wrapper(f):
     REQUEST_PER_SEC_LIMIT = 20
     ONE_SEC = 1
     def req_with_limit(*args, **kwargs):
+        debug = kwargs["debug"] if "debug" in kwargs else False
+
         global REQUESTS, REQUEST_START
         if REQUEST_START is None:
             REQUEST_START = time.time()
@@ -45,14 +48,15 @@ def request_wrapper(f):
             since = now - REQUEST_START
             if REQUESTS != 0 and REQUESTS % REQUEST_PER_TWO_MIN_LIMIT == 0 and (since <= TWO_MIN):
                 to_sleep = (TWO_MIN - since) + 1
-                print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
+                if debug:
+                    print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
                 time.sleep(to_sleep)
                 REQUEST_START = time.time()
             elif REQUESTS != 0 and REQUESTS % REQUEST_PER_SEC_LIMIT == 0 and (since <= ONE_SEC):
                 time.sleep(ONE_SEC)
         res = f(*args, **kwargs)
         REQUESTS += 1
-        if REQUESTS % 10 == 0:
+        if REQUESTS % 10 == 0 and debug:
             print(f'Requests made: {REQUESTS}')
         return res
     return req_with_limit
