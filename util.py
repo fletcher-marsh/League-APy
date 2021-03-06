@@ -1,6 +1,41 @@
 from summoner import Summoner
 
 from pprint import pprint
+import json
+
+    
+'''Get contents of file path as string'''
+def read_file(path):
+    with open(path, encoding="utf-8") as f:
+        return f.read().strip()
+
+'''Write contents of file path with text'''
+def write_file(path, text):
+    with open(path, "a") as f:
+        f.write(text)
+
+
+CHAMPS = json.loads(read_file('champions.json'))['data'] # Locally stored champs
+
+'''
+Get unique Champion ID attached to a champion. Included in this project is a json
+file containing all of the meta data for champions, so this does a linear search
+through that for the champion (could be improved with binary search, I guess...)
+'''
+def get_champ_id(champ_name):
+    for champ in CHAMPS.keys():
+        if CHAMPS[champ]['id'].lower() == champ_name.lower():
+            return CHAMPS[champ]['key']
+
+'''
+Inversely, get champ name from ID
+'''
+def get_champ_name(champ_id):
+    if isinstance(champ_id, int):
+        champ_id = str(champ_id)
+    for champ in CHAMPS.keys():
+        if CHAMPS[champ]['key'] == champ_id:
+            return CHAMPS[champ]['id']
 
 
 '''
@@ -51,13 +86,15 @@ def match_stats_for_sum(summoner, match):
             result['kills'] = stats['kills']
             result['deaths'] = stats['deaths']
             result['assists'] = stats['assists']
+            result['vision'] = stats['visionScore']
+            result['cs'] = stats['totalMinionsKilled']
     return result
 
 
 '''
 Get the average KDA for a set of participants
 '''
-def combined_kda(player_participants, match):
+def kda_score(player_participants, match):
     kills, deaths, assists = 0, 0, 0
     for player, participant in player_participants:
         stats = match_stats_for_sum(Summoner(sum_id=participant['player']['summonerId']), match)
@@ -65,6 +102,28 @@ def combined_kda(player_participants, match):
         deaths += stats['deaths']
         assists += stats['assists']
     return (kills + assists) / deaths
+
+
+'''
+Get total CS for a set of participants
+'''
+def cs_score(player_participants, match):
+    cs_score = 0
+    for player, participant in player_participants:
+        stats = match_stats_for_sum(Summoner(sum_id=participant['player']['summonerId']), match)
+        cs_score += stats['cs']
+    return cs_score
+
+
+'''
+Get total vision score for a set of participants
+'''
+def vision_score(player_participants, match):
+    vision_score = 0
+    for player, participant in player_participants:
+        stats = match_stats_for_sum(Summoner(sum_id=participant['player']['summonerId']), match)
+        vision_score += stats['vision']
+    return vision_score
 
 
 '''

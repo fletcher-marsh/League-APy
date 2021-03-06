@@ -1,6 +1,6 @@
 import requests
-import json
 import time
+import util
 from pprint import pprint # Not used, but SUPER useful for readability of API results
 
 
@@ -16,24 +16,13 @@ def check_response(req):
         print('\033[1;31;31mREQUEST FAILED\033[0m')
         print(f'Code: {req["status"]["status_code"]}')
         print(f'Message: {req["status"]["message"]}')
-    
-'''Get contents of file path as string'''
-def read_file(path):
-    with open(path, encoding="utf-8") as f:
-        return f.read().strip()
-
-'''Write contents of file path with text'''
-def write_file(path, text):
-    with open(path, "a") as f:
-        f.write(text)
 
 '''Convert time in ms (Unix epoch) to readable format (UTC Y-m-d H:M:S)'''
 def to_date(time_in_ms):
     datetime.utcfromtimestamp(tiem_in_ms).strftime('%Y-%m-%d %H:%M:%S')
 
-API_KEY = read_file("key.txt") # Get from https://developer.riotgames.com/
+API_KEY = util.read_file("key.txt") # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
-CHAMPS = json.loads(read_file('champions.json')) # Locally stored champs
 # Keep track of request counts (rate limiting)
 REQUESTS = 0
 REQUEST_START = None 
@@ -49,6 +38,8 @@ def request_wrapper(f):
     REQUEST_PER_SEC_LIMIT = 20
     ONE_SEC = 1
     def req_with_limit(*args, **kwargs):
+        debug = kwargs["debug"] if "debug" in kwargs else False
+
         global REQUESTS, REQUEST_START
         if REQUEST_START is None:
             REQUEST_START = time.time()
@@ -57,14 +48,15 @@ def request_wrapper(f):
             since = now - REQUEST_START
             if REQUESTS != 0 and REQUESTS % REQUEST_PER_TWO_MIN_LIMIT == 0 and (since <= TWO_MIN):
                 to_sleep = (TWO_MIN - since) + 1
-                print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
+                if debug:
+                    print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
                 time.sleep(to_sleep)
                 REQUEST_START = time.time()
             elif REQUESTS != 0 and REQUESTS % REQUEST_PER_SEC_LIMIT == 0 and (since <= ONE_SEC):
                 time.sleep(ONE_SEC)
         res = f(*args, **kwargs)
         REQUESTS += 1
-        if REQUESTS % 10 == 0:
+        if REQUESTS % 10 == 0 and debug:
             print(f'Requests made: {REQUESTS}')
         return res
     return req_with_limit
@@ -180,25 +172,6 @@ def get_summoner_by_name(name):
     check_response(response)
     return response
 
-'''
-Get unique Champion ID attached to a champion. Included in this project is a json
-file containing all of the meta data for champions, so this does a linear search
-through that for the champion (could be improved with binary search, I guess...)
-'''
-def get_champ_id(champ_name):
-    for champ in CHAMPS.keys():
-        if CHAMPS[champ]['id'].lower() == champ_name.lower():
-            return champ['key']
-
-'''
-Inversely, get champ name from ID
-'''
-def get_champ_name(champ_id):
-    if isinstance(champ_id, int):
-        champ_id = str(champ_id)
-    for champ in CHAMPS.keys():
-        if CHAMPS[champ]['key'] == champ_id:
-            return CHAMPS[champ]['id']
 
 '''
 Get summoner data for current challenger players
