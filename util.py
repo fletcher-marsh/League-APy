@@ -125,6 +125,14 @@ def vision_score(player_participants, match):
         vision_score += stats['vision']
     return vision_score
 
+'''
+Get all summoner names in a game
+'''
+def summoner_names_in_match(match):
+    names = []
+    for participant in match["participantIdentities"]:
+        names.append(participant["player"]["summonerName"])
+    return names
 
 '''
 Get participant by ID
@@ -135,4 +143,3 @@ def participant_by_id(p_id, match):
         if p['participantId'] == p_id:
             return p
     return None
-

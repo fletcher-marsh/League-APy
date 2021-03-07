@@ -10,18 +10,7 @@ from pprint import pprint
 Get list of all matches on of a summoner on a specific champ. Wrapper around get_matches
 '''
 def get_matches_by_champ(summoner, champ_id):
-    matches = []
-    start = 0
-    end = 100
-    while True:
-        m = queries.get_matches(summoner, champion=champ_id, beginIndex=start, endIndex=end)
-        if len(m) == 0:
-            return matches
-        else:
-            matches.extend(m)
-            start += 100
-            end += 100
-
+    return queries.get_all_matches(summoner, champion=champ_id)
 
 '''
 Print out aggregate stats for summoner on a particular champion
@@ -229,3 +218,16 @@ def get_botlane_stats(summoner):
             invalid_bots.append(m['gameId'])
 
     return (summoners_bot_won, summoners_bot_lost)
+
+'''
+Get duo win-rate
+'''
+def get_duo_wr(summoner1, summoner2):
+    s1_matches = queries.get_all_matches(summoner1, debug=True)
+
+    for match_meta in s1_matches:
+        match = get_match(match_meta["id"])
+        summoner_names = util.summoner_names_in_match(match)
+        print(summoner_names)
+        exit(1)
+

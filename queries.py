@@ -38,7 +38,11 @@ def request_wrapper(f):
     REQUEST_PER_SEC_LIMIT = 20
     ONE_SEC = 1
     def req_with_limit(*args, **kwargs):
-        debug = kwargs["debug"] if "debug" in kwargs else False
+        if "debug" in kwargs:
+            debug = kwargs["debug"]
+            del kwargs["debug"]
+        else:
+            debug = False
 
         global REQUESTS, REQUEST_START
         if REQUEST_START is None:
@@ -58,6 +62,8 @@ def request_wrapper(f):
         REQUESTS += 1
         if REQUESTS % 10 == 0 and debug:
             print(f'Requests made: {REQUESTS}')
+
+        check_response(res)
         return res
     return req_with_limit
 
@@ -75,9 +81,7 @@ def get_match(match_id):
         'api_key': API_KEY,
         'matchId': match_id
     }).json()
-    check_response(response)
     return response
-
 
 '''
 Get a list of up to 100 matches according to parameters:
@@ -126,9 +130,21 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
         'beginIndex': beginIndex,
         'endIndex': endIndex
     }).json()
-    check_response(response)
-    return response['matches']
+    return response
     
+def get_all_matches(summoner, **kwargs):
+    matches = []
+    start = 0
+    end = 100
+    while True:
+        m = get_matches(summoner, **kwargs)["matches"]
+        if len(m) == 0:
+            return matches
+        else:
+            matches.extend(m)
+            start += 100
+            end += 100
+
 '''
 Get unique Account ID attached to your account, used for other endpoints
 If you want to make lot's of queries, I recommend caching your id's so as to 
@@ -151,7 +167,6 @@ def get_summoner_by_acc_id(acc_id):
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_response(response)
     return response
 
 @request_wrapper
@@ -160,7 +175,6 @@ def get_summoner_by_sum_id(sum_id):
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_response(response)
     return response
 
 @request_wrapper
@@ -169,9 +183,7 @@ def get_summoner_by_name(name):
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_response(response)
     return response
-
 
 '''
 Get summoner data for current challenger players
@@ -182,7 +194,6 @@ def get_challengers():
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_response(response)
     return response['entries']
     
 '''
@@ -194,6 +205,5 @@ def get_current_game(summoner):
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY
     }).json()
-    check_response(response)
     return response
 
