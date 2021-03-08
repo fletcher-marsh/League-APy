@@ -118,6 +118,12 @@ Get a list of up to 100 matches according to parameters:
 '''
 @request_wrapper
 def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None, endTime=None, beginIndex=0, endIndex=100):
+    if endIndex - beginIndex > 100:
+        print("Cannot fetch more than 100 matches")
+        print("Begin:", beginIndex)
+        print("End:", endIndex)
+        exit(1)
+
     route = 'match/v4/matchlists/by-account/%s' % summoner.acc_id
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY,
