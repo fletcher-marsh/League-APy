@@ -7,8 +7,8 @@ from pprint import pprint
 
 def main():
     print(stats.get_duo_wr(
-        Summoner(name="who what"),
-        Summoner(name="space created xd"))
+        Summoner(name="eat big chip"),
+        Summoner(name="arrowtothecrotch"))
     )
 
 

@@ -154,6 +154,15 @@ def summoner_names_in_match(match):
     return names
 
 '''
+Get all summoner_ids in a game
+'''
+def summoner_ids_in_match(match):
+    names = []
+    for participant in match["participantIdentities"]:
+        names.append(participant["player"]["summonerId"])
+    return names
+
+'''
 Get participant by ID
 '''
 def participant_by_id(p_id, match):
