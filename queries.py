@@ -8,15 +8,6 @@ from pprint import pprint # Not used, but SUPER useful for readability of API re
 # Util - Constants/wrappers/helper functions/etc.
 # -------------------------------------------------
 
-'''
-Give readable info on request failure
-'''
-def check_response(req):
-    if 'status' in req.keys():
-        print('\033[1;31;31mREQUEST FAILED\033[0m')
-        print(f'Code: {req["status"]["status_code"]}')
-        print(f'Message: {req["status"]["message"]}')
-
 '''Convert time in ms (Unix epoch) to readable format (UTC Y-m-d H:M:S)'''
 def to_date(time_in_ms):
     datetime.utcfromtimestamp(tiem_in_ms).strftime('%Y-%m-%d %H:%M:%S')
@@ -33,10 +24,50 @@ Wrapper function to keep track of requests. Current rate limits are:
 100 reqs per 2 minutes
 '''
 def request_wrapper(f):
-    REQUEST_PER_TWO_MIN_LIMIT = 100
-    TWO_MIN = 120
-    REQUEST_PER_SEC_LIMIT = 20
-    ONE_SEC = 1
+    request_per_two_min = 100
+    two_min = 120
+    req_per_sec = 20
+    one_sec = 1
+    
+    def wait_for_limit(debug):
+        '''
+        Dynamically determine sleep times according to API limits
+        '''
+        global REQUEST_START
+        now = time.time()
+        since = now - REQUEST_START
+        if REQUESTS != 0 and REQUESTS % request_per_two_min == 0 and (since <= two_min):
+            to_sleep = (two_min - since) + 1
+            if debug:
+                print(f"Hit rate limit on request #{REQUESTS}, sleeping for %d seconds..." % to_sleep)
+            time.sleep(to_sleep)
+            REQUEST_START = time.time()
+        elif REQUESTS != 0 and REQUESTS % req_per_sec == 0 and (since <= one_sec):
+            time.sleep(one_sec)
+
+    def warn_or_retry(res, f, debug, *args, **kwargs):
+        '''
+        Give readable info on request failure
+        '''
+        if 'status' in res.keys():
+            code = res['status']['status_code']
+            message = res["status"]["message"]
+            if code == 504 or code == 503:
+                msg = f'Hit server-side error for request #{REQUESTS}, retrying...'
+                time.sleep(one_sec)
+                return f(debug = debug, *args, **kwargs)
+            elif code == 429:
+                wait_for_limit(debug = True)
+                return f(debug = debug, *args, **kwargs)
+            else:
+                msg = '\033[1;31;31mREQUEST FAILED\033[0m'
+                msg += f'Code: {code}'
+                msg += f'Message: {message}'
+            
+            if debug:
+                print(msg)
+        return res
+
     def req_with_limit(*args, **kwargs):
         if "debug" in kwargs:
             debug = kwargs["debug"]
@@ -48,23 +79,15 @@ def request_wrapper(f):
         if REQUEST_START is None:
             REQUEST_START = time.time()
         else:
-            now = time.time()
-            since = now - REQUEST_START
-            if REQUESTS != 0 and REQUESTS % REQUEST_PER_TWO_MIN_LIMIT == 0 and (since <= TWO_MIN):
-                to_sleep = (TWO_MIN - since) + 1
-                if debug:
-                    print("Hit rate limit, sleeping for %d seconds..." % to_sleep)
-                time.sleep(to_sleep)
-                REQUEST_START = time.time()
-            elif REQUESTS != 0 and REQUESTS % REQUEST_PER_SEC_LIMIT == 0 and (since <= ONE_SEC):
-                time.sleep(ONE_SEC)
+            wait_for_limit(debug)
+            
         res = f(*args, **kwargs)
         REQUESTS += 1
         if REQUESTS % 10 == 0 and debug:
             print(f'Requests made: {REQUESTS}')
 
-        check_response(res)
-        return res
+        return warn_or_retry(res, req_with_limit, debug, *args, **kwargs)
+
     return req_with_limit
 
 # -------------------------------------------------

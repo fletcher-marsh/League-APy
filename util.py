@@ -47,18 +47,26 @@ def get_champ_name(champ_id):
 '''
 Returns True if player is in the bottom lane
 '''
-def is_bot(player):
+def is_player_bot(player):
     return (player['timeline']['lane'] == 'BOTTOM')
 
 
 '''
+Returns True if player is in the bottom lane
+'''
+def is_player_blue_on_blue_in_match(player, match):
+    for p in match['participantIdentities']:
+        if player['summonerId'] == summoner.sum_id:
+            return player['teamId'] == 100
+
+    raise Exception("Player not in match")
+'''
 Returns True if player is on blue side
 '''
 def is_summoner_on_blue_side_in_match(summoner, match):
-    print(match)
-    exit(1)
     for p in match['participantIdentities']:
         if p['player']['summonerId'] == summoner.sum_id:
+            pprint(match['participants'])
             return p['player']['teamId'] == 100
     
     summoner_not_in_match(summoner, match)

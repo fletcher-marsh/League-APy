@@ -161,7 +161,7 @@ Criteria:
 '''
 def get_botlane_stats(summoner):
     # out of the last 20 games, show how many bots won/lost
-    last_20_matches = queries.get_matches(summoner, endIndex=20)
+    last_20_matches = queries.get_matches(summoner, endIndex=20)['matches']
 
     summoners_bot_won = 0
     summoners_bot_lost = 0
@@ -177,10 +177,10 @@ def get_botlane_stats(summoner):
             champ = util.get_champ_name(player['championId'])
             participant = util.participant_by_id(player['participantId'], match)
             if participant['player']['summonerId'] == summoner.sum_id:
-                summoner_is_blue_side = util.is_blue_side(player)
+                summoner_is_blue_side = util.is_summoner_on_blue_side_in_match(summoner, match)
 
-            if util.is_bot(player):
-                if util.is_blue_side(player):
+            if util.is_player_bot(player):
+                if util.is_player_blue_on_blue_in_match(player, match):
                     blue_bot.append((player, participant))
                 else:
                     red_bot.append((player, participant))
