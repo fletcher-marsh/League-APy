@@ -10,18 +10,7 @@ from pprint import pprint
 Get list of all matches on of a summoner on a specific champ. Wrapper around get_matches
 '''
 def get_matches_by_champ(summoner, champ_id):
-    matches = []
-    start = 0
-    end = 100
-    while True:
-        m = queries.get_matches(summoner, champion=champ_id, beginIndex=start, endIndex=end)
-        if len(m) == 0:
-            return matches
-        else:
-            matches.extend(m)
-            start += 100
-            end += 100
-
+    return queries.get_all_matches(summoner, champion=champ_id)
 
 '''
 Print out aggregate stats for summoner on a particular champion
@@ -172,7 +161,7 @@ Criteria:
 '''
 def get_botlane_stats(summoner):
     # out of the last 20 games, show how many bots won/lost
-    last_20_matches = queries.get_matches(summoner, endIndex=20)
+    last_20_matches = queries.get_matches(summoner, endIndex=20)['matches']
 
     summoners_bot_won = 0
     summoners_bot_lost = 0
@@ -188,10 +177,10 @@ def get_botlane_stats(summoner):
             champ = util.get_champ_name(player['championId'])
             participant = util.participant_by_id(player['participantId'], match)
             if participant['player']['summonerId'] == summoner.sum_id:
-                summoner_is_blue_side = util.is_blue_side(player)
+                summoner_is_blue_side = util.is_summoner_on_blue_side_in_match(summoner, match)
 
-            if util.is_bot(player):
-                if util.is_blue_side(player):
+            if util.is_player_bot(player):
+                if util.is_player_blue_on_blue_in_match(player, match):
                     blue_bot.append((player, participant))
                 else:
                     red_bot.append((player, participant))
@@ -229,3 +218,21 @@ def get_botlane_stats(summoner):
             invalid_bots.append(m['gameId'])
 
     return (summoners_bot_won, summoners_bot_lost)
+
+'''
+Get duo win-rate
+'''
+def get_duo_wr(summoner1, summoner2):
+    s1_matches = queries.get_all_matches(summoner1, debug=True)["matches"]
+    won = 0
+    lost = 0
+    for match_meta in s1_matches:
+        match = queries.get_match(match_meta["gameId"])
+        summoner_ids = util.summoner_ids_in_match(match)
+        if summoner2.sum_id in summoner_ids:
+            if(util.summoner_won_match(summoner1, match)):
+                won += 1
+            else:
+                lost += 1
+    
+    return (won, lost)

@@ -14,8 +14,14 @@ def write_file(path, text):
     with open(path, "a") as f:
         f.write(text)
 
-
 CHAMPS = json.loads(read_file('champions.json'))['data'] # Locally stored champs
+
+'''
+Error out when summoner isn't in a given match
+'''
+def summoner_not_in_match(summoner, match):
+    print(f"Summoner {summoner.name} does not exist in the match {match['gameId']}")
+    exit(1)
 
 '''
 Get unique Champion ID attached to a champion. Included in this project is a json
@@ -41,23 +47,29 @@ def get_champ_name(champ_id):
 '''
 Returns True if player is in the bottom lane
 '''
-def is_bot(player):
+def is_player_bot(player):
     return (player['timeline']['lane'] == 'BOTTOM')
 
 
 '''
+Returns True if player is in the bottom lane
+'''
+def is_player_blue_on_blue_in_match(player, match):
+    for p in match['participantIdentities']:
+        if player['summonerId'] == summoner.sum_id:
+            return player['teamId'] == 100
+
+    raise Exception("Player not in match")
+'''
 Returns True if player is on blue side
 '''
-def is_blue_side(player):
-    return player['teamId'] == 100
-
-
-'''
-Returns True if player is on red side
-'''
-def is_red_side(player):
-    return player['teamId'] == 200
-
+def is_summoner_on_blue_side_in_match(summoner, match):
+    for p in match['participantIdentities']:
+        if p['player']['summonerId'] == summoner.sum_id:
+            pprint(match['participants'])
+            return p['player']['teamId'] == 100
+    
+    summoner_not_in_match(summoner, match)
 
 
 '''
@@ -69,7 +81,20 @@ def participant_id_for_summoner_in_match(summoner, match):
     for p in participants:
         if p['player']['summonerId'] == summoner.sum_id:
             return p['participantId']
-    return None
+    
+    summoner_not_in_match(summoner, match)
+
+
+'''
+Returns True if summoner won
+'''
+def summoner_won_match(summoner, match):
+    p_id = participant_id_for_summoner_in_match(summoner, match)
+    for p in match['participants']:
+        if p['participantId'] == p_id:
+            return p['stats']['win']
+
+    summoner_not_in_match(summoner, match)
 
 
 '''
@@ -78,17 +103,19 @@ Get single game data (Kills, Deaths, Assists) for summoner
 def match_stats_for_sum(summoner, match):
     p_id = participant_id_for_summoner_in_match(summoner, match)
 
-    result = {}
     players = match['participants']
     for p in players:
         if p['participantId'] == p_id:
             stats = p['stats']
-            result['kills'] = stats['kills']
-            result['deaths'] = stats['deaths']
-            result['assists'] = stats['assists']
-            result['vision'] = stats['visionScore']
-            result['cs'] = stats['totalMinionsKilled']
-    return result
+            return {
+                'kills': stats['kills'],
+                'deaths': stats['deaths'],
+                'assists': stats['assists'],
+                'vision': stats['visionScore'],
+                'cs': stats['totalMinionsKilled']
+            }
+    
+    summoner_not_in_match(summoner, match)
 
 
 '''
@@ -125,6 +152,23 @@ def vision_score(player_participants, match):
         vision_score += stats['vision']
     return vision_score
 
+'''
+Get all summoner names in a game
+'''
+def summoner_names_in_match(match):
+    names = []
+    for participant in match["participantIdentities"]:
+        names.append(participant["player"]["summonerName"])
+    return names
+
+'''
+Get all summoner_ids in a game
+'''
+def summoner_ids_in_match(match):
+    names = []
+    for participant in match["participantIdentities"]:
+        names.append(participant["player"]["summonerId"])
+    return names
 
 '''
 Get participant by ID
@@ -135,4 +179,3 @@ def participant_by_id(p_id, match):
         if p['participantId'] == p_id:
             return p
     return None
-
