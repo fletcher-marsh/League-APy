@@ -6,11 +6,9 @@ from pprint import pprint
 
 
 def main():
-    # print(stats.get_duo_wr(
-    #     Summoner(name="eat big chip"),
-    #     Summoner(name="arrowtothecrotch"))
-    # )
-    print(stats.get_botlane_stats(Summoner(name="who what")))
+    match = queries.get_matches(Summoner(name='who what'), endIndex=1)['matches'][0]
+    print(queries.get_match(match['gameId']))
+
 
 if __name__ == "__main__":
     main()
