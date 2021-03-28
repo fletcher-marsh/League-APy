@@ -1,5 +1,3 @@
-from summoner import Summoner
-
 from pprint import pprint
 import json
 
@@ -100,8 +98,8 @@ def summoner_won_match(summoner, match):
 '''
 Get single game data (Kills, Deaths, Assists) for summoner
 '''
-def match_stats_for_sum(summoner, match):
-    p_id = participant_id_for_summoner_in_match(summoner, match)
+def participant_stats_in_match(participant, match):
+    p_id = participant['id']
 
     players = match['participants']
     for p in players:
@@ -124,7 +122,7 @@ Get the average KDA for a set of participants
 def kda_score(player_participants, match):
     kills, deaths, assists = 0, 0, 0
     for player, participant in player_participants:
-        stats = match_stats_for_sum(Summoner(sum_id=participant['player']['summonerId']), match)
+        stats = participant_stats_in_match(participant, match)
         kills += stats['kills']
         deaths += stats['deaths']
         assists += stats['assists']
@@ -137,7 +135,7 @@ Get total CS for a set of participants
 def cs_score(player_participants, match):
     cs_score = 0
     for player, participant in player_participants:
-        stats = match_stats_for_sum(Summoner(sum_id=participant['player']['summonerId']), match)
+        stats = participant_stats_in_match(participant, match)
         cs_score += stats['cs']
     return cs_score
 
@@ -148,7 +146,7 @@ Get total vision score for a set of participants
 def vision_score(player_participants, match):
     vision_score = 0
     for player, participant in player_participants:
-        stats = match_stats_for_sum(Summoner(sum_id=participant['player']['summonerId']), match)
+        stats = participant_stats_in_match(participant, match)
         vision_score += stats['vision']
     return vision_score
 
