@@ -173,17 +173,17 @@ def get_botlane_stats(summoner):
         summoner_is_blue_side = False
         blue_bot = []
         red_bot = []
-        for player in match["participants"]:
-            champ = util.get_champ_name(player['championId'])
-            participant = util.participant_by_id(player['participantId'], match)
-            if participant['player']['summonerId'] == summoner.sum_id:
+        for participant in match["participants"]:
+            champ = util.get_champ_name(participant['championId'])
+            participant_id = util.participant_identity_by_id(participant['participantId'], match)
+            if participant_id['player']['summonerId'] == summoner.sum_id:
                 summoner_is_blue_side = util.is_summoner_on_blue_side_in_match(summoner, match)
 
-            if util.is_player_bot(player):
-                if util.is_player_blue_on_blue_in_match(player, match):
-                    blue_bot.append((player, participant))
+            if util.is_participant_bot(participant):
+                if util.is_participant_on_blue(participant):
+                    blue_bot.append(participant)
                 else:
-                    red_bot.append((player, participant))
+                    red_bot.append(participant)
 
         if len(blue_bot) == len(red_bot) == 2:
             blue_score = 0
