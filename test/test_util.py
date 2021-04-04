@@ -108,7 +108,6 @@ class SummonersInMatchTestCase(unittest.TestCase):
         self.assertCountEqual(expected, actual)
 
     def test_summoner_ids_in_match(self):
-        self.maxDiff = None
         expected = [
             'b4GC5iDhDIQzR05I_FWcsqXLI398w_fpEXuyfEnY3jjBkcE',
             'zrYORzGayC5MjPlHHblAIUQ171xSvJAle3jtqm4D3juEpiI',
