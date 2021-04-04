@@ -1,7 +1,13 @@
 import queries
 
 class Summoner():
-    def __init__(self, name=None, acc_id=None, sum_id=None):
+    def __init__(self, name=None, acc_id=None, sum_id=None, offline=False):
+        if offline:
+            self.name = name
+            self.acc_id = acc_id
+            self.sum_id = sum_id
+            return
+            
         if name is not None:
             summoner = queries.get_summoner_by_name(name)
         elif acc_id is not None:

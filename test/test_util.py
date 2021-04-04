@@ -25,3 +25,7 @@ class ParticipantUtilTestCase(unittest.TestCase):
     def test_is_participant_bot(self):
         self.assertTrue(util.is_participant_bot(bot_participant))
         self.assertFalse(util.is_participant_bot(mid_participant))
+
+    def test_is_participant_on_blue(self):
+        self.assertTrue(util.is_participant_on_blue(bot_participant))
+        self.assertFalse(util.is_participant_on_blue(mid_participant))
