@@ -8,15 +8,18 @@ from pprint import pprint # Not used, but SUPER useful for readability of API re
 # Util - Constants/wrappers/helper functions/etc.
 # -------------------------------------------------
 
-'''Convert time in ms (Unix epoch) to readable format (UTC Y-m-d H:M:S)'''
-def to_date(time_in_ms):
-    datetime.utcfromtimestamp(tiem_in_ms).strftime('%Y-%m-%d %H:%M:%S')
-
-API_KEY = util.read_file("key.txt") # Get from https://developer.riotgames.com/
+API_KEY = None # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
 # Keep track of request counts (rate limiting)
 REQUESTS = 0
 REQUEST_START = None 
+
+def get_api_key():
+    global API_KEY
+    if API_KEY is None:
+        API_KEY = util.read_file("key.txt")
+        return API_KEY
+    return API_KEY
 
 '''
 Wrapper function to keep track of requests. Current rate limits are:
@@ -101,7 +104,7 @@ From an Integer match ID, get specific details of match
 def get_match(match_id):
     route = 'match/v4/matches/%d' % match_id
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY,
+        'api_key': get_api_key(),
         'matchId': match_id
     }).json()
     return response
@@ -149,7 +152,7 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
 
     route = 'match/v4/matchlists/by-account/%s' % summoner.acc_id
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY,
+        'api_key': get_api_key(),
         'encryptedAccountId': summoner.acc_id,
         'champion': champion,
         'queue': queue,
@@ -194,7 +197,7 @@ def get_sum_id(name):
 def get_summoner_by_acc_id(acc_id):
     route = "summoner/v4/summoners/by-account/%s" % acc_id
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY
+        'api_key': get_api_key()
     }).json()
     return response
 
@@ -202,7 +205,7 @@ def get_summoner_by_acc_id(acc_id):
 def get_summoner_by_sum_id(sum_id):
     route = "summoner/v4/summoners/%s" % sum_id
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY
+        'api_key': get_api_key()
     }).json()
     return response
 
@@ -210,7 +213,7 @@ def get_summoner_by_sum_id(sum_id):
 def get_summoner_by_name(name):
     route = "summoner/v4/summoners/by-name/%s" % name
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY
+        'api_key': get_api_key()
     }).json()
     return response
 
@@ -221,7 +224,7 @@ Get summoner data for current challenger players
 def get_challengers():
     route = 'league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5'
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY
+        'api_key': get_api_key()
     }).json()
     return response['entries']
     
@@ -232,7 +235,7 @@ Get current game data for a specific integer Summoner ID
 def get_current_game(summoner):
     route = f'spectator/v4/active-games/by-summoner/{summoner.sum_id}'
     response = requests.get(API_URL + route, params={
-        'api_key': API_KEY
+        'api_key': get_api_key()
     }).json()
     return response
 
