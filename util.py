@@ -61,19 +61,6 @@ def is_participant_on_blue(participant):
 
 
 '''
-Returns True if player is on blue side
-'''
-def is_summoner_on_blue_side_in_match(summoner, match):
-    p_id = participant_id_for_summoner_in_match(summoner, match)
-
-    for p in match['participants']:
-        if p['participantId'] == p_id:
-            return p['teamId'] == 100
-    
-    summoner_not_in_match(summoner, match)
-
-
-'''
 Get participant ID for summoner in a match
 '''
 def participant_id_for_summoner_in_match(summoner, match):
@@ -82,6 +69,19 @@ def participant_id_for_summoner_in_match(summoner, match):
     for p in participants:
         if p['player']['summonerId'] == summoner.sum_id:
             return p['participantId']
+    
+    summoner_not_in_match(summoner, match)
+
+
+'''
+Returns True if player is on blue side
+'''
+def is_summoner_on_blue_side_in_match(summoner, match):
+    p_id = participant_id_for_summoner_in_match(summoner, match)
+
+    for p in match['participants']:
+        if p['participantId'] == p_id:
+            return p['teamId'] == 100
     
     summoner_not_in_match(summoner, match)
 
@@ -101,7 +101,7 @@ def summoner_won_match(summoner, match):
 '''
 Get the average KDA for a set of participants
 '''
-def kda_score(participants, match):
+def kda_score(participants):
     kills, deaths, assists = 0, 0, 0
     for participant in participants:
         stats = participant['stats']
@@ -114,7 +114,7 @@ def kda_score(participants, match):
 '''
 Get total CS for a set of participants
 '''
-def cs_score(participants, match):
+def cs_score(participants):
     cs_score = 0
     for participant in participants:
         stats = participant['stats']
@@ -125,7 +125,7 @@ def cs_score(participants, match):
 '''
 Get total vision score for a set of participants
 '''
-def vision_score(participants, match):
+def vision_score(participants):
     vision_score = 0
     for participant in participants:
         stats = participant['stats']
