@@ -1,5 +1,7 @@
 import requests
 import time
+import diskcache as dc
+import os
 import util
 from pprint import pprint # Not used, but SUPER useful for readability of API results
 
@@ -17,6 +19,7 @@ API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off
 # Keep track of request counts (rate limiting)
 REQUESTS = 0
 REQUEST_START = None 
+CACHE = dc.Cache(os.path.dirname(os.path.realpath(__file__)))
 
 '''
 Wrapper function to keep track of requests. Current rate limits are:
@@ -100,6 +103,8 @@ From an Integer match ID, get specific details of match
 @request_wrapper
 def get_match(match_id):
     route = 'match/v4/matches/%d' % match_id
+    print(CACHE[route])
+    exit(1)
     response = requests.get(API_URL + route, params={
         'api_key': API_KEY,
         'matchId': match_id
@@ -161,11 +166,11 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
     }).json()
     return response
     
-def get_all_matches(summoner, **kwargs):
+def get_all_matches(summoner, limit=None, **kwargs):
     matches = []
     start = 0
     end = 100
-    while True:
+    while ((limit is not None and start < limit) or limit == None):
         m = get_matches(summoner, **kwargs)["matches"]
         if len(m) == 0:
             return matches
