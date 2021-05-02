@@ -1,0 +1,17 @@
+# Run all unittests
+
+name: Unittests
+
+on:
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - name: Run tests
+        run: ./test.sh
