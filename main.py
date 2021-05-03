@@ -10,6 +10,7 @@ def main():
         Summoner(name="eat big chip"),
         Summoner(name="arrowtothecrotch"))
     )
+    # print(queries.get_match(123))
     # print(stats.get_botlane_stats(Summoner(name="who what")))
 
 if __name__ == "__main__":

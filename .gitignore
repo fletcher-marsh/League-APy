@@ -1,5 +1,6 @@
 key.txt
 disc_token.txt
+cache.db
 users.txt
 *.pyc
 
