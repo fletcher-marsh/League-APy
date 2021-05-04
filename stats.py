@@ -224,6 +224,7 @@ Get duo win-rate
 '''
 def get_duo_wr(summoner1, summoner2, limit=None):
     s1_matches = queries.get_all_matches(summoner1, limit=limit, debug=True)
+    print(len(s1_matches))
     won = 0
     lost = 0
     for match_meta in s1_matches:
