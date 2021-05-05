@@ -152,12 +152,8 @@ def summoner_ids_in_match(match):
     names = []
     count = 0
     participant_ids = match['participantIdentities']
-    if (match['queueId'] in CPU_MATCH_TYPES):
-        # Games with bot accounts only have 5 players
-        for i in range(len(participant_ids)):
-            names.append(participant_ids[i]['player']['accountId'])
-    else:
-        for participant in participant_ids:
+    for participant in participant_ids:
+        if 'summonerId' in participant['player']:
             names.append(participant["player"]["summonerId"])
     return names
 
