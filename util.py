@@ -1,8 +1,6 @@
 from pprint import pprint
 import json
 
-
-CPU_MATCH_TYPES = [800, 810, 820, 830, 840, 850, 2000, 2010, 2020]
     
 '''Get contents of file path as string'''
 def read_file(path):
