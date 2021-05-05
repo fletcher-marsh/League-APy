@@ -1,6 +1,8 @@
 from pprint import pprint
 import json
 
+
+CPU_MATCH_TYPES = [800, 810, 820, 830, 840, 850, 2000, 2010, 2020]
     
 '''Get contents of file path as string'''
 def read_file(path):
@@ -149,11 +151,14 @@ Get all summoner_ids in a game
 def summoner_ids_in_match(match):
     names = []
     count = 0
-    for participant in match["participantIdentities"]:
-        if participant['player']['accountId'] == '0':
-            # Corrupted participant :(
-            continue
-        names.append(participant["player"]["summonerId"])
+    participant_ids = match['participantIdentities']
+    if (match['queueId'] in CPU_MATCH_TYPES):
+        # Games with bot accounts only have 5 players
+        for i in range(len(participant_ids)):
+            names.append(participant_ids[i]['player']['accountId'])
+    else:
+        for participant in participant_ids:
+            names.append(participant["player"]["summonerId"])
     return names
 
 
