@@ -148,8 +148,11 @@ Get all summoner_ids in a game
 '''
 def summoner_ids_in_match(match):
     names = []
-    for participant in match["participantIdentities"]:
-        names.append(participant["player"]["summonerId"])
+    count = 0
+    participant_ids = match['participantIdentities']
+    for participant in participant_ids:
+        if 'summonerId' in participant['player']:
+            names.append(participant["player"]["summonerId"])
     return names
 
 

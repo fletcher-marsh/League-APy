@@ -1,5 +1,8 @@
 import requests
 import time
+import diskcache as dc
+import os
+import copy
 import util
 from pprint import pprint # Not used, but SUPER useful for readability of API results
 
@@ -13,6 +16,7 @@ API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off
 # Keep track of request counts (rate limiting)
 REQUESTS = 0
 REQUEST_START = None 
+CACHE = dc.Cache(os.path.dirname(os.path.realpath(__file__)))
 
 def get_api_key():
     global API_KEY
@@ -31,7 +35,6 @@ def request_wrapper(f):
     two_min = 120
     req_per_sec = 20
     one_sec = 1
-    
     def wait_for_limit(debug):
         '''
         Dynamically determine sleep times according to API limits
@@ -62,6 +65,9 @@ def request_wrapper(f):
             elif code == 429:
                 wait_for_limit(debug = True)
                 return f(debug = debug, *args, **kwargs)
+            elif code == 401:
+                msg = f'Unauthorized, make sure you have an updated API key:\n'
+                msg += 'https://developer.riotgames.com/'
             else:
                 msg = '\033[1;31;31mREQUEST FAILED\033[0m'
                 msg += f'Code: {code}'
@@ -70,6 +76,12 @@ def request_wrapper(f):
             if debug:
                 print(msg)
         return res
+
+    def create_cache_key(route, params):
+        id_dict = copy.copy(params)
+        id_dict['route'] = route
+        del id_dict['api_key']
+        return tuple(sorted(id_dict.items()))
 
     def req_with_limit(*args, **kwargs):
         if "debug" in kwargs:
@@ -83,11 +95,18 @@ def request_wrapper(f):
             REQUEST_START = time.time()
         else:
             wait_for_limit(debug)
-            
-        res = f(*args, **kwargs)
-        REQUESTS += 1
-        if REQUESTS % 10 == 0 and debug:
-            print(f'Requests made: {REQUESTS}')
+
+        route, params = f(*args, **kwargs)
+        cache_lookup = create_cache_key(route, params)
+        if cache_lookup in CACHE:
+            res = CACHE[cache_lookup]
+        else:
+            res = requests.get(API_URL + route, params=params).json()
+            if 'status' not in res:
+                CACHE[cache_lookup] = res
+            REQUESTS += 1
+            if REQUESTS % 10 == 0 and debug:
+                print(f'Requests made: {REQUESTS}')
 
         return warn_or_retry(res, req_with_limit, debug, *args, **kwargs)
 
@@ -103,11 +122,11 @@ From an Integer match ID, get specific details of match
 @request_wrapper
 def get_match(match_id):
     route = 'match/v4/matches/%d' % match_id
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key(),
         'matchId': match_id
-    }).json()
-    return response
+    }
+    return route, params
 
 '''
 Get a list of up to 100 matches according to parameters:
@@ -151,7 +170,7 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
         exit(1)
 
     route = 'match/v4/matchlists/by-account/%s' % summoner.acc_id
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key(),
         'encryptedAccountId': summoner.acc_id,
         'champion': champion,
@@ -161,21 +180,22 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
         'endTime': endTime,
         'beginIndex': beginIndex,
         'endIndex': endIndex
-    }).json()
-    return response
+    }
+    return route, params
     
-def get_all_matches(summoner, **kwargs):
+def get_all_matches(summoner, limit=None, **kwargs):
     matches = []
     start = 0
-    end = 100
-    while True:
-        m = get_matches(summoner, **kwargs)["matches"]
-        if len(m) == 0:
-            return matches
+    end = 100 if limit is None or limit >= 100 else limit
+    while ((limit is not None and start < limit) or limit == None):
+        m = get_matches(summoner, beginIndex=start, endIndex=end, **kwargs)["matches"]
+        if len(m) < 100:
+            return matches + m
         else:
             matches.extend(m)
             start += 100
-            end += 100
+            end += 100 if (limit is None or limit - end >= 100) else limit - end
+    return matches
 
 '''
 Get unique Account ID attached to your account, used for other endpoints
@@ -196,26 +216,26 @@ def get_sum_id(name):
 @request_wrapper
 def get_summoner_by_acc_id(acc_id):
     route = "summoner/v4/summoners/by-account/%s" % acc_id
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key()
-    }).json()
-    return response
+    }
+    return route, params
 
 @request_wrapper
 def get_summoner_by_sum_id(sum_id):
     route = "summoner/v4/summoners/%s" % sum_id
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key()
-    }).json()
-    return response
+    }
+    return route, params
 
 @request_wrapper
 def get_summoner_by_name(name):
     route = "summoner/v4/summoners/by-name/%s" % name
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key()
-    }).json()
-    return response
+    }
+    return route, params
 
 '''
 Get summoner data for current challenger players
@@ -223,10 +243,10 @@ Get summoner data for current challenger players
 @request_wrapper
 def get_challengers():
     route = 'league/v4/challengerleagues/by-queue/RANKED_SOLO_5x5'
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key()
-    }).json()
-    return response['entries']
+    }
+    return route, params
     
 '''
 Get current game data for a specific integer Summoner ID
@@ -234,8 +254,8 @@ Get current game data for a specific integer Summoner ID
 @request_wrapper
 def get_current_game(summoner):
     route = f'spectator/v4/active-games/by-summoner/{summoner.sum_id}'
-    response = requests.get(API_URL + route, params={
+    params = {
         'api_key': get_api_key()
-    }).json()
-    return response
+    }
+    return route, params
 

@@ -222,8 +222,8 @@ def get_botlane_stats(summoner):
 '''
 Get duo win-rate
 '''
-def get_duo_wr(summoner1, summoner2):
-    s1_matches = queries.get_all_matches(summoner1, debug=True)["matches"]
+def get_duo_wr(summoner1, summoner2, limit=None):
+    s1_matches = queries.get_all_matches(summoner1, limit=limit)
     won = 0
     lost = 0
     for match_meta in s1_matches:
@@ -235,4 +235,4 @@ def get_duo_wr(summoner1, summoner2):
             else:
                 lost += 1
     
-    return (won, lost)
+    return won / (won + lost)
