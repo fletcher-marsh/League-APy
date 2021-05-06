@@ -10,7 +10,7 @@ from pprint import pprint
 Get list of all matches on of a summoner on a specific champ. Wrapper around get_matches
 '''
 def get_matches_by_champ(summoner, champ_id):
-    return queries.get_all_matches(summoner, limit=5, champion=champ_id)
+    return queries.get_all_matches(summoner, champion=champ_id)
 
 
 '''
@@ -51,10 +51,11 @@ def get_all_champ_stats(summoner):
         total_assists = 0
         for m in matches:
             match = queries.get_match(m['gameId'])
-            stats = util.match_stats_for_sum(summoner, match)
-            total_kills += stats['kills']
-            total_deaths += stats['deaths']
-            total_assists += stats['assists']
+            participant = util.participant_by_summoner_in_match(summoner, match)
+            k, d, a = util.kda_score([participant])
+            total_kills += k
+            total_deaths += d
+            total_assists += a
         print('Kills: %d' % total_kills)
         print('Deaths: %d' % total_deaths)
         print('Assists: %d' % total_assists)

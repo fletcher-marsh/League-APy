@@ -15,8 +15,9 @@ API_KEY = None # Get from https://developer.riotgames.com/
 API_URL = "https://na1.api.riotgames.com/lol/" # Base API URL, used to build off of for specific endpoints
 # Keep track of request counts (rate limiting)
 REQUESTS = 0
-REQUEST_START = None 
+REQUEST_START = None
 CACHE = dc.Cache(os.path.dirname(os.path.realpath(__file__)))
+
 
 def get_api_key():
     global API_KEY
@@ -24,6 +25,12 @@ def get_api_key():
         API_KEY = util.read_file("key.txt")
         return API_KEY
     return API_KEY
+
+
+def clear_cache():
+    CACHE.clear()
+    exit(1)
+
 
 '''
 Wrapper function to keep track of requests. Current rate limits are:
@@ -35,6 +42,7 @@ def request_wrapper(f):
     two_min = 120
     req_per_sec = 20
     one_sec = 1
+
     def wait_for_limit(debug):
         '''
         Dynamically determine sleep times according to API limits
@@ -72,7 +80,7 @@ def request_wrapper(f):
                 msg = '\033[1;31;31mREQUEST FAILED\033[0m'
                 msg += f'Code: {code}'
                 msg += f'Message: {message}'
-            
+
             if debug:
                 print(msg)
         return res
@@ -102,8 +110,9 @@ def request_wrapper(f):
             res = CACHE[cache_lookup]
         else:
             res = requests.get(API_URL + route, params=params).json()
-            if 'status' not in res:
+            if 'status' not in res and 'match/v4/matchlists/' not in route:
                 CACHE[cache_lookup] = res
+
             REQUESTS += 1
             if REQUESTS % 10 == 0 and debug:
                 print(f'Requests made: {REQUESTS}')
@@ -134,24 +143,24 @@ Get a list of up to 100 matches according to parameters:
 
     champion    List of Integer IDs of champion (use get_champ_id)
 
-    queue       List of Integer IDs of types of game 
+    queue       List of Integer IDs of types of game
                 (see https://developer.riotgames.com/game-constants.html)
 
-    season      List of Integer IDs of seasons 
+    season      List of Integer IDs of seasons
                 (see https://developer.riotgames.com/game-constants.html)
 
     beginTime   Integer (Unix epoch) milliseconds to start search from
                 DEFAULT (and endTime exists): start of account's match history
-                NOTE: beginTime and endTime are required to be within 1 week of each other 
+                NOTE: beginTime and endTime are required to be within 1 week of each other
                         (604800000 ms)
                 NOTE: endTime must be after beginTime
                 NOTE: if you specify endTime but not beginTime, it's likely you will 400
 
     endTime     Integer (Unix epoch) milliseconds to end search at
                 DEFAULT (and startTime exists): current Unix timestamp in ms
-                DEFAULT (and startTime doesn't exist): defers to showing most 
+                DEFAULT (and startTime doesn't exist): defers to showing most
                                                      recent 100 games
-                NOTE: if not provided and startTime is provided, it will ignore maximum 
+                NOTE: if not provided and startTime is provided, it will ignore maximum
                     time range of 1 week limitation
 
     beginIndex  Integer representing distance from most recent game to start search from
@@ -182,7 +191,7 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
         'endIndex': endIndex
     }
     return route, params
-    
+
 def get_all_matches(summoner, limit=None, **kwargs):
     matches = []
     start = 0
@@ -199,7 +208,7 @@ def get_all_matches(summoner, limit=None, **kwargs):
 
 '''
 Get unique Account ID attached to your account, used for other endpoints
-If you want to make lot's of queries, I recommend caching your id's so as to 
+If you want to make lot's of queries, I recommend caching your id's so as to
 reduce your footprint.
 '''
 def get_acc_id(name):
@@ -247,7 +256,7 @@ def get_challengers():
         'api_key': get_api_key()
     }
     return route, params
-    
+
 '''
 Get current game data for a specific integer Summoner ID
 '''
@@ -258,4 +267,3 @@ def get_current_game(summoner):
         'api_key': get_api_key()
     }
     return route, params
-

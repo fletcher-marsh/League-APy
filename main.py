@@ -6,7 +6,7 @@ from pprint import pprint
 
 
 def main():
-    stats.get_champ_stats(Summoner(name="who what"), "leblanc")
+    stats.get_all_champ_stats(Summoner(name="who what"))
 
 if __name__ == "__main__":
     main()
