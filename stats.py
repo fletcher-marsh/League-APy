@@ -10,35 +10,35 @@ from pprint import pprint
 Get list of all matches on of a summoner on a specific champ. Wrapper around get_matches
 '''
 def get_matches_by_champ(summoner, champ_id):
-    return queries.get_all_matches(summoner, champion=champ_id)
+    return queries.get_all_matches(summoner, limit=5, champion=champ_id)
+
 
 '''
 Print out aggregate stats for summoner on a particular champion
-NOTE: Due to rate limiting, this is suuuuper slow
 '''
 def get_champ_stats(summoner, champ_name):
-    c_id = queries.get_champ_id(champ_name)
+    c_id = util.get_champ_id(champ_name)
     matches = get_matches_by_champ(summoner, c_id)
-    print('Games played: %d' % len(matches))
+
     total_kills = 0
     total_deaths = 0
     total_assists = 0
     for m in matches:
         match = queries.get_match(m['gameId'])
-        stats = util.match_stats_for_sum(summoner, match)
-        total_kills += stats['kills']
-        total_deaths += stats['deaths']
-        total_assists += stats['assists']
-    print('Kills: %d' % total_kills) 
-    print('Deaths: %d' % total_deaths) 
-    print('Assists: %d' % total_assists) 
+        participant = util.participant_by_summoner_in_match(summoner, match)
+        k, d, a = util.kda_score([participant])
+        total_kills += k
+        total_deaths += d
+        total_assists += a
+    print('Kills: %d' % total_kills)
+    print('Deaths: %d' % total_deaths)
+    print('Assists: %d' % total_assists)
     print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
     print()
 
 
 '''
 Print out aggregate stats for summoner on every champion
-NOTE: Again, suuuper slow due to rate limiting
 '''
 def get_all_champ_stats(summoner):
     for champ in util.CHAMPS.keys():
@@ -55,9 +55,9 @@ def get_all_champ_stats(summoner):
             total_kills += stats['kills']
             total_deaths += stats['deaths']
             total_assists += stats['assists']
-        print('Kills: %d' % total_kills) 
-        print('Deaths: %d' % total_deaths) 
-        print('Assists: %d' % total_assists) 
+        print('Kills: %d' % total_kills)
+        print('Deaths: %d' % total_deaths)
+        print('Assists: %d' % total_assists)
         print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
         print()
 
@@ -130,7 +130,7 @@ def get_recent_wr(summoner):
                 if p['stats']['win']:
                     wins += 1
     return wins / len(last_20)
-    
+
 
 '''
 Get stats about all players in a given players game
@@ -188,7 +188,7 @@ def get_botlane_stats(summoner):
         if len(blue_bot) == len(red_bot) == 2:
             blue_score = 0
             red_score = 0
-            
+
             blue_kda = util.kda_score(blue_bot, match)
             red_kda = util.kda_score(red_bot, match)
             blue_score += blue_kda / red_kda
@@ -234,5 +234,5 @@ def get_duo_wr(summoner1, summoner2, limit=None):
                 won += 1
             else:
                 lost += 1
-    
+
     return won / (won + lost)

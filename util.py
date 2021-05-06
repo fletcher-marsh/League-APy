@@ -1,7 +1,7 @@
 from pprint import pprint
 import json
 
-    
+
 '''Get contents of file path as string'''
 def read_file(path):
     with open(path, encoding="utf-8") as f:
@@ -69,7 +69,7 @@ def participant_id_for_summoner_in_match(summoner, match):
     for p in participants:
         if p['player']['summonerId'] == summoner.sum_id:
             return p['participantId']
-    
+
     summoner_not_in_match(summoner, match)
 
 
@@ -82,7 +82,7 @@ def is_summoner_on_blue_side_in_match(summoner, match):
     for p in match['participants']:
         if p['participantId'] == p_id:
             return p['teamId'] == 100
-    
+
     summoner_not_in_match(summoner, match)
 
 
@@ -99,7 +99,7 @@ def summoner_won_match(summoner, match):
 
 
 '''
-Get the average KDA for a set of participants
+Get Kills, Deaths, Assists for participants
 '''
 def kda_score(participants):
     kills, deaths, assists = 0, 0, 0
@@ -108,6 +108,16 @@ def kda_score(participants):
         kills += stats['kills']
         deaths += stats['deaths']
         assists += stats['assists']
+    return (kills, deaths, assists)
+
+
+'''
+Get the average KDA for a set of participants
+'''
+def kda_ratio(participants):
+    kills, deaths, assists = kda_score(participants)
+    if deaths == 0:
+        return kills + assists
     return (kills + assists) / deaths
 
 
@@ -165,3 +175,12 @@ def participant_identity_by_id(p_id, match):
         if p['participantId'] == p_id:
             return p
     return None
+
+
+'''
+Get participant by Summoner
+'''
+def participant_by_summoner_in_match(summoner, match):
+    # ParticipantIDs are one-indexed
+    p_id = participant_id_for_summoner_in_match(summoner, match) - 1
+    return match['participants'][p_id]
