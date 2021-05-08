@@ -184,3 +184,15 @@ def participant_by_summoner_in_match(summoner, match):
     # ParticipantIDs are one-indexed
     p_id = participant_id_for_summoner_in_match(summoner, match) - 1
     return match['participants'][p_id]
+
+'''
+Returns None if no errors with response
+Otherwise, returns a tuple of (error code, error msg)
+'''
+def error_in_response(response):
+    if "status" in response:
+        return {
+            'code': response['status']['status_code'],
+            'msg': response['status']['message']
+        }
+    return None

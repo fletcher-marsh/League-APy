@@ -59,23 +59,23 @@ def request_wrapper(f):
         elif REQUESTS != 0 and REQUESTS % req_per_sec == 0 and (since <= one_sec):
             time.sleep(one_sec)
 
-    def warn_or_retry(res, f, debug, *args, **kwargs):
+    def warn_retry_exit(res, f, debug, *args, **kwargs):
         '''
         Give readable info on request failure
         '''
-        if 'status' in res.keys():
-            code = res['status']['status_code']
-            message = res["status"]["message"]
+        error = util.error_in_response(res)
+        if error is not None:
+            code, message = error['code'], error['msg']
             if code == 504 or code == 503:
-                msg = f'Hit server-side error for request #{REQUESTS}, retrying...'
+                print(f'Hit server-side error for request #{REQUESTS}, retrying...')
                 time.sleep(one_sec)
-                return f(debug = debug, *args, **kwargs)
-            elif code == 429:
-                wait_for_limit(debug = True)
                 return f(debug = debug, *args, **kwargs)
             elif code == 401:
                 msg = f'Unauthorized, make sure you have an updated API key:\n'
                 msg += 'https://developer.riotgames.com/'
+            elif code == 429:
+                wait_for_limit(debug = True)
+                return f(debug = debug, *args, **kwargs)
             else:
                 msg = '\033[1;31;31mREQUEST FAILED\033[0m'
                 msg += f'Code: {code}'
@@ -83,6 +83,7 @@ def request_wrapper(f):
 
             if debug:
                 print(msg)
+                exit(1)
         return res
 
     def create_cache_key(route, params):
@@ -117,7 +118,7 @@ def request_wrapper(f):
             if REQUESTS % 10 == 0 and debug:
                 print(f'Requests made: {REQUESTS}')
 
-        return warn_or_retry(res, req_with_limit, debug, *args, **kwargs)
+        return warn_retry_exit(res, req_with_limit, debug, *args, **kwargs)
 
     return req_with_limit
 
@@ -197,7 +198,12 @@ def get_all_matches(summoner, limit=None, **kwargs):
     start = 0
     end = 100 if limit is None or limit >= 100 else limit
     while ((limit is not None and start < limit) or limit == None):
-        m = get_matches(summoner, beginIndex=start, endIndex=end, **kwargs)["matches"]
+        match_response = get_matches(summoner, beginIndex=start, endIndex=end, **kwargs)
+        error = util.error_in_response(match_response)
+        if error is not None and error['code'] == 404:
+            return []
+
+        m = match_response["matches"]
         if len(m) < 100:
             return matches + m
         else:

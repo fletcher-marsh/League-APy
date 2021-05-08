@@ -1,26 +1,15 @@
-[1mAatrox[1m
-------------------
-Games played: 23
-Kills: 164
-Deaths: 162
-Assists: 194
-KDA: 2.21
-
-[1mAhri[1m
-------------------
-Games played: 16
-Kills: 93
-Deaths: 87
-Assists: 129
-KDA: 2.55
-
-[1mAkali[1m
-------------------
-Games played: 142
-Kills: 1268
-Deaths: 736
-Assists: 761
-KDA: 2.76
-
-[1mAlistar[1m
-------------------
+Requests made: 20
+Requests made: 30
+Requests made: 40
+Requests made: 50
+Requests made: 60
+Requests made: 70
+Requests made: 80
+Requests made: 90
+Requests made: 100
+Hit rate limit on request #100, sleeping for 73 seconds...
+Hit rate limit on request #100, sleeping for 120 seconds...
+Requests made: 110
+Requests made: 120
+Requests made: 130
+[1;31;31mREQUEST FAILED[0mCode: 404Message: Data not found
