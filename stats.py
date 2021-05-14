@@ -40,41 +40,11 @@ def get_champ_stats(summoner, champ_name):
 '''
 Print out aggregate stats for summoner on every champion
 '''
-# def get_all_champ_stats(summoner):
-#     for champ in util.CHAMPS.keys():
-#         print('\033[1m' + champ + '\033[1m')
-#         print('------------------')
-#         matches = get_matches_by_champ(summoner, util.CHAMPS[champ]['key'])
-#         print('Games played: %d' % len(matches))
-#         total_kills = 0
-#         total_deaths = 0
-#         total_assists = 0
-#         for m in matches:
-#             match = queries.get_match(m['gameId'])
-#             if 'status' in match:
-#                 print(champ)
-#                 print(m['gameId'])
-#             participant = util.participant_by_summoner_in_match(summoner, match)
-#             k, d, a = util.kda_score([participant])
-#             total_kills += k
-#             total_deaths += d
-#             total_assists += a
-#         print('Kills: %d' % total_kills)
-#         print('Deaths: %d' % total_deaths)
-#         print('Assists: %d' % total_assists)
-#         if total_deaths == 0:
-#             print('KDA: %0.2f' % ((total_kills + total_assists)))
-#         else:
-#             print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
-#         print()
-
 def get_all_champ_stats(summoner):
     all_matches = queries.get_all_matches(summoner)
     champs_to_kda = {}
     for match_meta in all_matches:
-        m = queries.get_match(match_meta['gameId'], debug=True)
-        # if 'participantIdentities' not in m:
-        #     pprint(m)
+        m = queries.get_match(match_meta['gameId'])
         participant = util.participant_by_summoner_in_match(summoner, m)
         champ_name = util.get_champ_name(participant['championId'])
         k, d, a = util.kda_score([participant])
@@ -84,7 +54,7 @@ def get_all_champ_stats(summoner):
             champs_to_kda[champ_name][2] += a
         else:
             champs_to_kda[champ_name] = [k, d, a]
-    print(champs_to_kda)
+
     return champs_to_kda
 
 
@@ -104,6 +74,8 @@ def get_top_positions():
     challengers = queries.get_challengers()
     for c in challengers:
         # Take last 20 matches, skipping over naming issues
+        print(c)
+        exit(1)
         try:
             summoner = Summoner(name=c['summonerName'])
         except:
