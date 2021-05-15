@@ -2,6 +2,7 @@ import champion_groups
 import queries
 import time
 import util
+from summoner import Summoner
 
 from pprint import pprint
 
@@ -12,54 +13,50 @@ Get list of all matches on of a summoner on a specific champ. Wrapper around get
 def get_matches_by_champ(summoner, champ_id):
     return queries.get_all_matches(summoner, champion=champ_id)
 
+
 '''
 Print out aggregate stats for summoner on a particular champion
-NOTE: Due to rate limiting, this is suuuuper slow
 '''
 def get_champ_stats(summoner, champ_name):
-    c_id = queries.get_champ_id(champ_name)
+    c_id = util.get_champ_id(champ_name)
     matches = get_matches_by_champ(summoner, c_id)
-    print('Games played: %d' % len(matches))
+
     total_kills = 0
     total_deaths = 0
     total_assists = 0
     for m in matches:
         match = queries.get_match(m['gameId'])
-        stats = util.match_stats_for_sum(summoner, match)
-        total_kills += stats['kills']
-        total_deaths += stats['deaths']
-        total_assists += stats['assists']
-    print('Kills: %d' % total_kills) 
-    print('Deaths: %d' % total_deaths) 
-    print('Assists: %d' % total_assists) 
+        participant = util.participant_by_summoner_in_match(summoner, match)
+        k, d, a = util.kda_score([participant])
+        total_kills += k
+        total_deaths += d
+        total_assists += a
+    print('Kills: %d' % total_kills)
+    print('Deaths: %d' % total_deaths)
+    print('Assists: %d' % total_assists)
     print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
     print()
 
 
 '''
 Print out aggregate stats for summoner on every champion
-NOTE: Again, suuuper slow due to rate limiting
 '''
 def get_all_champ_stats(summoner):
-    for champ in util.CHAMPS.keys():
-        print('\033[1m' + champ + '\033[1m')
-        print('------------------')
-        matches = get_matches_by_champ(summoner, util.CHAMPS[champ]['key'])
-        print('Games played: %d' % len(matches))
-        total_kills = 0
-        total_deaths = 0
-        total_assists = 0
-        for m in matches:
-            match = queries.get_match(m['gameId'])
-            stats = util.match_stats_for_sum(summoner, match)
-            total_kills += stats['kills']
-            total_deaths += stats['deaths']
-            total_assists += stats['assists']
-        print('Kills: %d' % total_kills) 
-        print('Deaths: %d' % total_deaths) 
-        print('Assists: %d' % total_assists) 
-        print('KDA: %0.2f' % ((total_kills + total_assists)/total_deaths))
-        print()
+    all_matches = queries.get_all_matches(summoner)
+    champs_to_kda = {}
+    for match_meta in all_matches:
+        m = queries.get_match(match_meta['gameId'])
+        participant = util.participant_by_summoner_in_match(summoner, m)
+        champ_name = util.get_champ_name(participant['championId'])
+        k, d, a = util.kda_score([participant])
+        if champ_name in champs_to_kda:
+            champs_to_kda[champ_name][0] += k
+            champs_to_kda[champ_name][1] += d
+            champs_to_kda[champ_name][2] += a
+        else:
+            champs_to_kda[champ_name] = [k, d, a]
+
+    return champs_to_kda
 
 
 '''
@@ -76,13 +73,10 @@ def get_top_positions():
         'sup': 0
     }
     challengers = queries.get_challengers()
-    for c in challengers:
+    for c in challengers['entries']:
         # Take last 20 matches, skipping over naming issues
-        try:
-            summoner = Summoner(name=c['summonerName'])
-        except:
-            continue
-        matches = queries.get_matches(summoner, endIndex=20)
+        summoner = Summoner(sum_id=c['summonerId'])
+        matches = queries.get_matches(summoner, endIndex=20)['matches']
         roles = {
             'top': 0,
             'jg': 0,
@@ -90,6 +84,7 @@ def get_top_positions():
             'bot': 0,
             'sup': 0
         }
+
         for m in matches:
             if m['lane'] == 'TOP':
                 roles['top'] += 1
@@ -130,7 +125,7 @@ def get_recent_wr(summoner):
                 if p['stats']['win']:
                     wins += 1
     return wins / len(last_20)
-    
+
 
 '''
 Get stats about all players in a given players game
@@ -188,7 +183,7 @@ def get_botlane_stats(summoner):
         if len(blue_bot) == len(red_bot) == 2:
             blue_score = 0
             red_score = 0
-            
+
             blue_kda = util.kda_score(blue_bot, match)
             red_kda = util.kda_score(red_bot, match)
             blue_score += blue_kda / red_kda
@@ -234,5 +229,5 @@ def get_duo_wr(summoner1, summoner2, limit=None):
                 won += 1
             else:
                 lost += 1
-    
+
     return won / (won + lost)
