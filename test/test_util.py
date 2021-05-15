@@ -81,7 +81,7 @@ class GroupParticipantsScoresTestCase(unittest.TestCase):
         ]
 
     def test_kda_score(self):
-        self.assertEqual(util.kda_score(self.test_participants), 3)
+        self.assertEqual(util.kda_score(self.test_participants), (16, 8, 8))
     
     def test_cs_score(self):
         self.assertEqual(util.cs_score(self.test_participants), 400)

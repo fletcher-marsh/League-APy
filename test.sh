@@ -21,9 +21,19 @@ help()
 
 }
 
+unameOut="$(uname -s)"
+case "${unameOut}" in
+    Linux*)     py_cmd=python3;;
+    Darwin*)    py_cmd=python3;;
+    CYGWIN*)    py_cmd=python;;
+    MINGW*)     py_cmd=python;;
+    *)          py_cmd=python;;
+esac
+echo ${py_cmd}
+
 if [[ $# -eq 0 ]]
 then
-  python3 -m unittest discover .
+  ${py_cmd} -m unittest discover .
 elif [[ "$1" = "-h" || "$1" = "--help" || "$1" = "help" ]]
 then
   help
@@ -31,7 +41,7 @@ else
   for test_case in "$@"
   do
     echo "Running $test_case..."
-    python3 -m unittest "$test_case"
+    ${py_cmd} -m unittest "$test_case"
     echo
     echo
   done
