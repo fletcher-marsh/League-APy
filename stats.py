@@ -2,6 +2,7 @@ import champion_groups
 import queries
 import time
 import util
+from summoner import Summoner
 
 from pprint import pprint
 
@@ -72,15 +73,10 @@ def get_top_positions():
         'sup': 0
     }
     challengers = queries.get_challengers()
-    for c in challengers:
+    for c in challengers['entries']:
         # Take last 20 matches, skipping over naming issues
-        print(c)
-        exit(1)
-        try:
-            summoner = Summoner(name=c['summonerName'])
-        except:
-            continue
-        matches = queries.get_matches(summoner, endIndex=20)
+        summoner = Summoner(sum_id=c['summonerId'])
+        matches = queries.get_matches(summoner, endIndex=20)['matches']
         roles = {
             'top': 0,
             'jg': 0,
@@ -88,6 +84,7 @@ def get_top_positions():
             'bot': 0,
             'sup': 0
         }
+
         for m in matches:
             if m['lane'] == 'TOP':
                 roles['top'] += 1

@@ -92,6 +92,15 @@ def request_wrapper(f):
         del id_dict['api_key']
         return tuple(sorted(id_dict.items()))
 
+    def is_cacheable(route):
+        uncacheable_routes = [
+            'match/v4/matchlists/'
+        ]
+        for uncacheable_route in uncacheable_routes:
+            if uncacheable_route in route:
+                return False
+        return True
+
     def req_with_limit(*args, **kwargs):
         if "debug" in kwargs:
             debug = kwargs["debug"]
@@ -111,7 +120,7 @@ def request_wrapper(f):
             res = CACHE[cache_lookup]
         else:
             res = requests.get(API_URL + route, params=params).json()
-            if 'status' not in res and 'match/v4/matchlists/' not in route:
+            if 'status' not in res and is_cacheable(route):
                 CACHE[cache_lookup] = res
 
             REQUESTS += 1

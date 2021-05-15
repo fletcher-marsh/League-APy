@@ -185,6 +185,7 @@ def participant_by_summoner_in_match(summoner, match):
     p_id = participant_id_for_summoner_in_match(summoner, match) - 1
     return match['participants'][p_id]
 
+
 '''
 Returns None if no errors with response
 Otherwise, returns a tuple of (error code, error msg)
