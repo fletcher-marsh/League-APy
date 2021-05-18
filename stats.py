@@ -1,6 +1,4 @@
-import champion_groups
 import queries
-import time
 import util
 from summoner import Summoner
 
@@ -169,7 +167,6 @@ def get_botlane_stats(summoner):
         blue_bot = []
         red_bot = []
         for participant in match["participants"]:
-            champ = util.get_champ_name(participant['championId'])
             participant_id = util.participant_identity_by_id(participant['participantId'], match)
             if participant_id['player']['summonerId'] == summoner.sum_id:
                 summoner_is_blue_side = util.is_summoner_on_blue_side_in_match(summoner, match)
@@ -184,18 +181,18 @@ def get_botlane_stats(summoner):
             blue_score = 0
             red_score = 0
 
-            blue_kda = util.kda_score(blue_bot, match)
-            red_kda = util.kda_score(red_bot, match)
+            blue_kda = util.kda_ratio(blue_bot)
+            red_kda = util.kda_ratio(red_bot)
             blue_score += blue_kda / red_kda
             red_score += red_kda / blue_kda
 
-            blue_cs = util.cs_score(blue_bot, match)
-            red_cs = util.cs_score(red_bot, match)
+            blue_cs = util.cs_score(blue_bot)
+            red_cs = util.cs_score(red_bot)
             blue_score += blue_cs / red_cs
             red_score += red_cs / blue_cs
 
-            blue_vision = util.vision_score(blue_bot, match)
-            red_vision = util.vision_score(red_bot, match)
+            blue_vision = util.vision_score(blue_bot)
+            red_vision = util.vision_score(red_bot)
             blue_score += blue_vision / red_vision
             red_score += red_vision / blue_vision
 
