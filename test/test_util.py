@@ -4,7 +4,6 @@ import util
 import unittest
 
 
-
 with open('test/test_bot_participant.json') as bot_participant_file:
     bot_participant = json.load(bot_participant_file)
 
@@ -13,6 +12,7 @@ with open('test/test_mid_participant.json') as mid_participant_file:
 
 with open('test/test_match.json') as match_file:
     test_match = json.load(match_file)
+
 
 class ChampUtilTestCase(unittest.TestCase):
     def test_get_champ_id(self):
@@ -83,6 +83,9 @@ class GroupParticipantsScoresTestCase(unittest.TestCase):
     def test_kda_score(self):
         self.assertEqual(util.kda_score(self.test_participants), (16, 8, 8))
     
+    def test_kda_ratio(self):
+        self.assertEqual(util.kda_ratio(self.test_participants), 3)
+
     def test_cs_score(self):
         self.assertEqual(util.cs_score(self.test_participants), 400)
 
@@ -122,3 +125,33 @@ class SummonersInMatchTestCase(unittest.TestCase):
         ]
         actual = util.summoner_ids_in_match(test_match)
         self.assertCountEqual(expected, actual)
+
+
+class ParticipantsInMatchTestCase(unittest.TestCase):
+    def test_participant_identity_by_id(self):
+        test_id = util.participant_identity_by_id(1, test_match)
+        self.assertEqual(test_id)
+
+    def test_participant_identity_by_id(self):
+        self.assertIsNone(util.participant_identity_by_id(12345, test_match))
+
+    def test_participant_by_summoner_in_match(self):
+        test_sum = Summoner(sum_id='MnQWQZHlXGaaDHR28XJe0aT5VO9wOuLmgLRl6-bLzGvToWQ', offline=True)
+        test_participant = util.participant_by_summoner_in_match(test_sum, test_match)
+        self.assertEqual(test_participant['participantId'], 4)
+
+
+class ErrorResponseTestCase(unittest.TestCase):
+    def test_error_in_response(self):
+        test_response = {
+            "status": {
+                "status_code": 123,
+                "message": "it aint workin"
+            }
+        }
+        actual = util.error_in_response(test_response)
+        expected = {
+            "code": 123,
+            "msg": "it aint workin"
+        }
+        self.assertEqual(actual, expected)
