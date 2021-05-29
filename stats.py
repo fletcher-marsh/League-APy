@@ -60,9 +60,7 @@ def get_all_champ_stats(summoner):
 '''
 Get position stats about challengers on the ladder
 '''
-# @request_wrapper
 def get_top_positions():
-    result = {}
     all_roles = {
         'top': 0,
         'jg': 0,
