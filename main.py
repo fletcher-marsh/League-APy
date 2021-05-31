@@ -24,5 +24,6 @@ def main():
     print('Highest CS (%d games): %s, %s' % (cs_games, highest_cs_champ, highest_cs))
     print('Most games: %s, %d' % (highest_games_champ, highest_games))
 
+
 if __name__ == "__main__":
     main()
