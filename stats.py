@@ -209,6 +209,7 @@ def get_botlane_stats(summoner):
 
     return (summoners_bot_won, summoners_bot_lost)
 
+
 '''
 Get duo win-rate
 '''
@@ -226,3 +227,54 @@ def get_duo_wr(summoner1, summoner2, limit=None):
                 lost += 1
 
     return won / (won + lost)
+
+
+'''
+Given a summoner, go through their last <N> matches and collect metrics on
+champions in their games.
+
+Each champion will have a resulting statistics dictionary:
+{
+    'kda': <float>,
+    'dmg': <float>,
+    'gold': <float>,
+    'cs': <float>,
+    'vision': <float>,
+    'match_count': <int>,
+}
+
+These statistics will represent a simple average per-game.
+'''
+def get_summoner_champion_stats(summoner, n):
+    data = {}
+    for match_meta in queries.gen_all_matches(summoner, limit=n):
+        match = queries.get_match(match_meta['gameId'])
+        for participant in match['participants']:
+            champ_name = util.get_champ_name(participant['championId'])
+            p_list = [participant]
+            kda = util.kda_ratio(p_list)
+            dmg = util.dmg_to_champions_by_participants(p_list)
+            gold = util.gold_by_participants(p_list)
+            cs = util.cs_score(p_list)
+            vision = util.vision_score(p_list)
+
+            if champ_name in data:
+                c = data[champ_name]
+                data[champ_name] = {
+                    'kda': util.bump_aggregate_stat(c['kda'], c['match_count'], kda),
+                    'dmg': util.bump_aggregate_stat(c['dmg'], c['match_count'], dmg),
+                    'gold': util.bump_aggregate_stat(c['gold'], c['match_count'], gold),
+                    'cs': util.bump_aggregate_stat(c['cs'], c['match_count'], cs),
+                    'vision': util.bump_aggregate_stat(c['vision'], c['match_count'], vision),
+                    'match_count': c['match_count'] + 1
+                }
+            else:
+                data[champ_name] = {
+                    'kda': kda,
+                    'dmg': dmg,
+                    'gold': gold,
+                    'cs': cs,
+                    'vision': vision,
+                    'match_count': 1
+                }
+    return data

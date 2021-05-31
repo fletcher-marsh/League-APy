@@ -202,6 +202,10 @@ def get_matches(summoner, champion=None, queue=None, season=None, beginTime=None
     }
     return route, params
 
+
+'''
+Return all matches up to <limit> at once
+'''
 def get_all_matches(summoner, limit=None, **kwargs):
     matches = []
     start = 0
@@ -221,6 +225,29 @@ def get_all_matches(summoner, limit=None, **kwargs):
             end += 100 if (limit is None or limit - end >= 100) else limit - end
     return matches
 
+
+'''
+Create a generator to lazily fetch all matches up to <limit>
+'''
+def gen_all_matches(summoner, limit=None, **kwargs):
+    count = 0
+    start = 0
+    end = 100 if limit is None or limit >= 100 else limit
+    while (limit is None or (count < limit)):
+        match_response = get_matches(summoner, beginIndex=start, endIndex=end, **kwargs)
+        error = util.error_in_response(match_response)
+        if error is not None and error['code'] == 404:
+            yield error
+        else:
+            for m in match_response['matches']:
+                yield m
+
+            if len(m) < 100:
+                break
+
+            start += 100
+            end += 100 if (limit is None or limit - end >= 100) else limit - end
+            
 '''
 Get unique Account ID attached to your account, used for other endpoints
 If you want to make lot's of queries, I recommend caching your id's so as to

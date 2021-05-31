@@ -99,7 +99,7 @@ def summoner_won_match(summoner, match):
 
 
 '''
-Get Kills, Deaths, Assists for participants
+Get kills, deaths, assists for participants
 '''
 def kda_score(participants):
     kills, deaths, assists = 0, 0, 0
@@ -112,6 +112,15 @@ def kda_score(participants):
 
 
 '''
+Get kills, deaths, assists for summoner(s)
+'''
+def kda_score_by_summoners(summoners, match):
+    participants = []
+    for s in summoners:
+        participants.append(participant_by_summoner_in_match(s, match))
+    return kda_score(participants)
+
+'''
 Get the average KDA for a set of participants
 '''
 def kda_ratio(participants):
@@ -119,6 +128,16 @@ def kda_ratio(participants):
     if deaths == 0:
         return kills + assists
     return (kills + assists) / deaths
+
+
+'''
+Get kda ratio for summoner(s)
+'''
+def kda_ratio_by_summoners(summoners, match):
+    participants = []
+    for s in summoners:
+        participants.append(participant_by_summoner_in_match(s, match))
+    return kda_ratio(participants)
 
 
 '''
@@ -133,6 +152,16 @@ def cs_score(participants):
 
 
 '''
+Get CS score for summoner(s)
+'''
+def cs_score_by_summoners(summoners, match):
+    participants = []
+    for s in summoners:
+        participants.append(participant_by_summoner_in_match(s, match))
+    return cs_score(participants)
+
+
+'''
 Get total vision score for a set of participants
 '''
 def vision_score(participants):
@@ -141,6 +170,36 @@ def vision_score(participants):
         stats = participant['stats']
         vision_score += stats['visionScore']
     return vision_score
+
+
+'''
+Get vision score for summoner(s)
+'''
+def vision_score_by_summoners(summoners, match):
+    participants = []
+    for s in summoners:
+        participants.append(participant_by_summoner_in_match(s, match))
+    return vision_score(participants)
+
+
+'''
+Get total gold for participants
+'''
+def gold_by_participants(participants):
+    gold = 0
+    for p in participants:
+        gold += p['stats']['goldEarned']
+    return gold
+
+
+'''
+Get total dmg for participants
+'''
+def dmg_to_champions_by_participants(participants):
+    dmg = 0
+    for p in participants:
+        dmg += p['stats']['totalDamageDealtToChampions']
+    return dmg
 
 
 '''
@@ -197,3 +256,11 @@ def error_in_response(response):
             'msg': response['status']['message']
         }
     return None
+
+
+'''
+Given a simple average <old_stat> and the number of samples to attain that average <count>,
+calculate the new average value using <new_stat>
+'''
+def bump_aggregate_stat(old_stat, count, new_stat):
+    return ((old_stat * count) + new_stat) / (count + 1)
